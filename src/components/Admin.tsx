@@ -659,20 +659,27 @@ export const AdminDashboard = ({
   }, [setActiveNotification]);
 
   useEffect(() => {
+    // Initial fetch for support messages
+    SupabaseService.getAllSupportMessages().then(msgs => {
+      setAllSupportMessages(msgs);
+    });
+
+    const unsub = SupabaseService.subscribeToAllSupportMessages((userid, msgs) => {
+      const last = msgs[msgs.length - 1];
+      if (last && !last.isadmin && new Date(last.date).getTime() > Date.now() - 5000) {
+          playNotificationSound('message');
+      }
+      setAllSupportMessages(prev => ({ ...prev, [userid]: msgs }));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'support') {
-      // Fetch initial state
+      // Re-fetch when entering tab just to be safe
       SupabaseService.getAllSupportMessages().then(msgs => {
         setAllSupportMessages(msgs);
       });
-
-      const unsub = SupabaseService.subscribeToAllSupportMessages((userid, msgs) => {
-        const last = msgs[msgs.length - 1];
-        if (last && !last.isadmin && new Date(last.date).getTime() > Date.now() - 5000) {
-            playNotificationSound('message');
-        }
-        setAllSupportMessages(prev => ({ ...prev, [userid]: msgs }));
-      });
-      return unsub;
     }
   }, [activeTab]);
 
@@ -776,9 +783,14 @@ export const AdminDashboard = ({
                alt="Logo" 
              />
              <div>
-               <h1 className="text-xl font-black italic tracking-tighter">
-                 <span className="text-slate-950">AKWABA</span> <span className="text-primary">ADMIN</span>
-               </h1>
+               <div className="flex items-center gap-1.5">
+                 <h1 className="text-xl font-black italic tracking-tighter">
+                   <span className="text-slate-950">AKWABA</span> <span className="text-primary">ADMIN</span>
+                 </h1>
+                 <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
+                   <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                 </div>
+               </div>
                <p className="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em]">Management Suite v2</p>
              </div>
           </div>
@@ -803,6 +815,7 @@ export const AdminDashboard = ({
             { id: 'media', label: 'Médias', icon: ImagePlus },
             { id: 'subscribers', label: 'Abonnés', icon: Users },
             { id: 'kyc', label: 'Vérification KYC', icon: UserCheck },
+            { id: 'support', label: 'Support Direct', icon: Headset },
             { id: 'analytics', label: 'Statistiques', icon: Activity },
             { id: 'activity-log', label: 'Sécurité & Logs', icon: ShieldCheck },
             { id: 'payments', label: 'Paiements', icon: CreditCard },
@@ -887,18 +900,23 @@ export const AdminDashboard = ({
                   <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-white animate-pulse" />
                 )}
              </button>
-             <button 
-                onClick={() => setActiveTab('settings')}
-                className="w-10 h-10 rounded-full border-2 border-primary/20 hover:border-primary transition-all overflow-hidden bg-slate-50 flex items-center justify-center p-0.5 shadow-sm"
-                title="Paramètres de profil"
-              >
-                <img 
-                  src={currentUser?.photourl || `https://ui-avatars.com/api/?name=${currentUser?.displayname || 'Admin'}`} 
-                  alt="Admin Profile"
-                  className="w-full h-full rounded-full object-cover aspect-square"
-                  referrerPolicy="no-referrer"
-                />
-             </button>
+              <div className="relative group">
+                <button 
+                  onClick={() => setActiveTab('settings')}
+                  className="w-10 h-10 rounded-full border-2 border-primary/20 hover:border-primary transition-all overflow-hidden bg-slate-50 flex items-center justify-center p-0.5 shadow-sm"
+                  title="Paramètres de profil"
+                >
+                  <img 
+                    src={currentUser?.photourl || `https://ui-avatars.com/api/?name=${currentUser?.displayname || 'Admin'}`} 
+                    alt="Admin Profile"
+                    className="w-full h-full rounded-full object-cover aspect-square"
+                    referrerPolicy="no-referrer"
+                  />
+                </button>
+                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-4 h-4 rounded-full border-2 border-white flex items-center justify-center shadow-md">
+                   <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                </div>
+              </div>
           </div>
         </header>
 
@@ -1093,8 +1111,8 @@ export const AdminDashboard = ({
                          <div>
                            <div className="flex items-center gap-3">
                               <h3 className="text-2xl md:text-3xl font-black italic">{currentUser.displayname}</h3>
-                              <div className="p-1 bg-primary/10 rounded-full text-primary">
-                                 <CheckCircle size={14} />
+                              <div className="bg-blue-500 text-white rounded-full p-1 shadow-sm">
+                                 <CheckCircle size={14} fill="currentColor" fillOpacity={0} strokeWidth={3} />
                               </div>
                            </div>
                            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">Super Administrateur • Akwaba Info</p>

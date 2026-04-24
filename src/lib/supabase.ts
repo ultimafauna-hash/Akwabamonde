@@ -1374,8 +1374,8 @@ export const SupabaseService = {
             return;
           }
 
-          // Use the requested repo: Akwabanews/akwaba-monde
-          const response = await fetch(`https://api.github.com/repos/Akwabanews/akwaba-monde/contents/uploads/${bucket}/${path}/${fileName}`, {
+          // Use the requested repo: ultimafauna-hash/Akwabamonde
+          const response = await fetch(`https://api.github.com/repos/ultimafauna-hash/Akwabamonde/contents/uploads/${bucket}/${path}/${fileName}`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1388,7 +1388,7 @@ export const SupabaseService = {
           });
 
           if (response.ok) {
-            const rawUrl = `https://raw.githubusercontent.com/Akwabanews/akwaba-monde/main/uploads/${bucket}/${path}/${fileName}`;
+            const rawUrl = `https://raw.githubusercontent.com/ultimafauna-hash/Akwabamonde/main/uploads/${bucket}/${path}/${fileName}`;
             resolve(rawUrl);
           } else {
             const err = await response.json();

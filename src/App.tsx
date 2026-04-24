@@ -4399,11 +4399,18 @@ export default function App() {
                     currentView === 'profile' && "ring-2 ring-primary"
                   )}
                 >
-                  <img 
-                    src={currentUser.photoURL || `https://ui-avatars.com/api/?name=${currentUser.displayName || 'User'}`} 
-                    className="w-12 h-12 rounded-full border-2 border-primary object-cover aspect-square"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="relative">
+                    <img 
+                      src={currentUser.photoURL || `https://ui-avatars.com/api/?name=${currentUser.displayName || 'User'}`} 
+                      className="w-12 h-12 rounded-full border-2 border-primary object-cover aspect-square"
+                      referrerPolicy="no-referrer"
+                    />
+                    {isAdminAuthenticated && (
+                      <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+                        <CheckCircle size={10} fill="currentColor" fillOpacity={0} />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1">
                     <div className="font-bold text-slate-800 truncate max-w-[150px]">
                       {currentUser.displayName || 'Utilisateur'}
@@ -4582,7 +4589,13 @@ export default function App() {
                     )}
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white" />
+                  {isAdminAuthenticated ? (
+                    <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-4 h-4 md:w-5 md:h-5 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+                      <CheckCircle size={10} className="md:w-3 md:h-3" fill="currentColor" fillOpacity={0} />
+                    </div>
+                  ) : (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white" />
+                  )}
                 </div>
                 <button 
                   onClick={handleUserLogout}
