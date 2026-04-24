@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
     urgentbannerlink TEXT,
     flashnews TEXT,
     categories TEXT[] DEFAULT '{}',
+    categories_icons JSONB DEFAULT '{}'::jsonb,
     maintenancemode BOOLEAN DEFAULT false,
     donationamounts INTEGER[] DEFAULT '{1000, 2000, 5000}',
     donationpaymentmethods TEXT[] DEFAULT '{}',

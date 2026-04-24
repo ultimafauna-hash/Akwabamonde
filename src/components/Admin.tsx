@@ -1615,7 +1615,7 @@ export const AdminDashboard = ({
                                   setTempSettings({...tempSettings, categories: newCats, categories_icons: newIcons});
                                 }
                               }} 
-                              className="text-red-500 hover:scale-110 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="text-red-500 hover:scale-125 transition-all p-1"
                             >
                               <X size={14}/>
                             </button>
