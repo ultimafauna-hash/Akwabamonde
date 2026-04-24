@@ -103,6 +103,7 @@ import {
   setupRecaptcha, 
   sendPhoneOtp, 
   auth,
+  supabase,
   onAuthStateChanged
 } from './lib/supabase';
 type FirebaseUser = any; 
@@ -3595,10 +3596,9 @@ export default function App() {
 
   const handleAdminLogout = async () => {
     try {
-      await auth.signOut();
-      setIsAdminAuthenticated(false);
-      localStorage.removeItem('akwaba_is_admin');
-      navigate('/');
+      await supabase.auth.signOut();
+      setCurrentView('home');
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout Error:", error);
     }
@@ -4059,12 +4059,9 @@ export default function App() {
 
   const handleUserLogout = async () => {
     try {
-      await auth.signOut();
-      setCurrentUser(null);
-      setIsAdminAuthenticated(false);
-      localStorage.setItem('akwaba_is_admin', 'false');
-      setActiveNotification("Déconnexion réussie");
-      goHome();
+      await supabase.auth.signOut();
+      setCurrentView('home');
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout error:", error);
     }
