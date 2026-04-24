@@ -60,6 +60,7 @@ export interface Comment {
   parentid?: string; // For replies
   reportedby?: string[]; // Array of user IDs who reported
   isreported?: boolean;
+  isadmin?: boolean;
 }
 
 export interface UserProfile {
@@ -190,6 +191,7 @@ export interface ChatMessage {
   userphoto?: string;
   content: string;
   date: string;
+  isadmin?: boolean;
 }
 
 export interface Event {

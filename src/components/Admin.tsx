@@ -2020,9 +2020,16 @@ export const AdminDashboard = ({
                           )}>
                             {msg.content}
                           </div>
-                          <span className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">
-                            {msg.isadmin ? 'Moi (Support)' : msg.username} • {format(new Date(msg.date), 'HH:mm')}
-                          </span>
+                          <div className={cn("flex items-center gap-1.5 mt-2 opacity-60", msg.isadmin ? "flex-row-reverse" : "flex-row")}>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                              {msg.isadmin ? 'Moi (Support)' : msg.username} • {format(new Date(msg.date), 'HH:mm')}
+                            </span>
+                            {msg.isadmin && (
+                              <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
+                                <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

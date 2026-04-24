@@ -1890,7 +1890,12 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
                   <Headset size={24} />
                 </div>
                 <div>
-                  <h4 className="font-display font-black leading-tight text-lg">Support Akwaba</h4>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-display font-black leading-tight text-lg">Support Akwaba</h4>
+                    <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
+                      <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                    </div>
+                  </div>
                   <div className="flex items-center gap-1.5 opacity-70">
                     <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
                     <p className="text-[10px] uppercase font-black tracking-widest">En ligne</p>
@@ -1944,9 +1949,16 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
                     )}>
                       {msg.content}
                     </div>
-                    <span className="text-[8px] font-black text-slate-400 mt-2 uppercase tracking-tight opacity-60">
-                      {msg.isadmin ? "Support Akwaba" : "Moi"} • {safeFormatDate(msg.date, 'HH:mm')}
-                    </span>
+                    <div className={cn("flex items-center gap-1.5 mt-2 opacity-60", msg.isadmin ? "flex-row" : "flex-row-reverse")}>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-tight">
+                        {msg.isadmin ? "Support Akwaba" : "Moi"} • {safeFormatDate(msg.date, 'HH:mm')}
+                      </span>
+                      {msg.isadmin && (
+                        <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
+                          <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -2003,7 +2015,7 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
   );
 };
 
-const LiveChat = ({ articleId, user }: { articleId: string, user: FirebaseUser | null }) => {
+const LiveChat = ({ articleId, user, isAdmin }: { articleId: string, user: FirebaseUser | null, isAdmin: boolean }) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -2027,7 +2039,8 @@ const LiveChat = ({ articleId, user }: { articleId: string, user: FirebaseUser |
       userName: user.displayName || "Anonyme",
       userPhoto: user.photoURL || undefined,
       content: newMessage,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      isadmin: isAdmin
     };
     await SupabaseService.sendChatMessage(msg);
     setNewMessage("");
@@ -2047,7 +2060,14 @@ const LiveChat = ({ articleId, user }: { articleId: string, user: FirebaseUser |
           <div key={msg.id} className={cn("flex items-start gap-3", msg.userId === user?.uid ? "flex-row-reverse" : "")}>
             <img src={msg.userPhoto || "https://ui-avatars.com/api/?name="+msg.userName} className="w-8 h-8 rounded-full border border-slate-200 object-cover" />
             <div className={cn("max-w-[80%] p-3 rounded-2xl text-sm", msg.userId === user?.uid ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-700 shadow-sm rounded-tl-none")}>
-              <div className="text-[10px] font-black opacity-50 mb-1">{msg.userName}</div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="text-[10px] font-black opacity-50">{msg.userName}</div>
+                {msg.isadmin && (
+                  <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
+                    <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                  </div>
+                )}
+              </div>
               {msg.content}
             </div>
           </div>
@@ -3665,7 +3685,8 @@ export default function App() {
       likes: 0,
       likedby: [],
       articleid: articleId,
-      parentid: parentCommentId
+      parentid: parentCommentId,
+      isadmin: isAdminAuthenticated
     };
 
     try {
@@ -5297,7 +5318,14 @@ export default function App() {
                                   </div>
                                   <div className="flex-1 space-y-2">
                                     <div className="flex justify-between items-center">
-                                      <span className="font-bold text-sm">{comment.username}</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-bold text-sm">{comment.username}</span>
+                                        {comment.isadmin && (
+                                          <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
+                                            <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                                          </div>
+                                        )}
+                                      </div>
                                       <span className="text-[10px] text-slate-400">
                                         {safeFormatDate(comment.date, 'dd MMM yyyy HH:mm')}
                                       </span>
@@ -5407,7 +5435,7 @@ export default function App() {
                     <ExchangeRatesWidget rates={exchangeRates} />
                     
                     {(selectedArticle.category === 'En Direct' || selectedArticle.tags?.includes('Live')) && (
-                      <LiveChat articleId={selectedArticle.id} user={currentUser} />
+                      <LiveChat articleId={selectedArticle.id} user={currentUser} isAdmin={isAdminAuthenticated} />
                     )}
 
                     <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 space-y-4">
