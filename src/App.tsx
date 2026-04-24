@@ -73,12 +73,15 @@ import {
   ShoppingBag,
   Info,
   ExternalLink,
-  List as ListIcon
+  List as ListIcon,
+  LayoutGrid,
+  LayoutList
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import confetti from 'canvas-confetti';
 import { MOCK_ARTICLES, MOCK_EVENTS, MOCK_AUTHORS, MOCK_CULTURE } from './constants';
 import { Article, Comment, Event, SiteSettings, Subscriber, MediaAsset, Poll, Classified, LiveBlog, AppNotification, SupportMessage, Author, WebTV, CulturePost, AdminActivityLog } from './types';
 import { cn, optimizeImage, getYoutubeId, safeFormatDate } from './lib/utils';
@@ -1007,75 +1010,199 @@ const EventSection = ({ events, onEventClick, onSeeAll }: { events: Event[], onE
 };
 
 const EventDetailView = ({ event, onBack }: { event: Event, onBack: () => void }) => {
+  const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+
+  useEffect(() => {
+    const target = new Date(event.date).getTime();
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = target - now;
+      if (distance < 0) {
+        setTimeLeft(null);
+        clearInterval(timer);
+        return;
+      }
+      setTimeLeft({
+        d: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        h: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        m: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        s: Math.floor((distance % (1000 * 60)) / 1000)
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [event.date]);
+
   if (!event) return null;
+
+  const addToCalendar = () => {
+    const title = encodeURIComponent(event.title);
+    const details = encodeURIComponent(event.excerpt);
+    const location = encodeURIComponent(event.location);
+    const date = new Date(event.date);
+    const startDate = date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${startDate}/${endDate}`;
+    window.open(googleCalendarUrl, '_blank');
+  };
+
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
-      className="max-w-4xl mx-auto space-y-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-6xl mx-auto py-10 px-4 space-y-12"
     >
-      <button onClick={onBack} className="text-primary text-xs font-bold flex items-center gap-1 mb-4">
-        <ArrowLeft size={14} /> Retour
-      </button>
-      
-      <div className="space-y-4 text-center">
-        <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-          {event.category}
-        </span>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight">
-          {event.title}
-        </h1>
-        <div className="flex items-center justify-center gap-6 text-sm text-slate-500 font-bold">
-          <div className="flex items-center gap-2">
-            <Calendar size={18} className="text-primary" />
-            {safeFormatDate(event.date, 'dd MMMM yyyy')}
-          </div>
-          <div className="flex items-center gap-2">
-            <Map size={18} className="text-primary" />
-            {event.location}
-          </div>
-        </div>
+      <div className="flex items-center justify-between">
+        <button onClick={onBack} className="bg-white p-3 rounded-full shadow-sm border border-slate-100 text-slate-900 hover:text-primary transition-colors">
+          <ArrowLeft size={20} />
+        </button>
+        <button 
+          onClick={addToCalendar}
+          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+        >
+          <Calendar size={16} /> Ajouter au calendrier
+        </button>
       </div>
 
-      {(event.image || event.video) && (
-        <div className="space-y-6">
-          {event.video && getYoutubeId(event.video) && (
-            <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-slate-900/5 aspect-video">
-              <iframe 
-                src={`https://www.youtube.com/embed/${getYoutubeId(event.video)}`}
-                title={event.title}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                {event.category}
+              </span>
+              <div className="h-px flex-1 bg-slate-100" />
             </div>
-          )}
-          {event.image && (
-            <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-slate-900/5">
-              <img 
-                id={`event-detail-img-${event.id}`}
-                src={optimizeImage(event.image, 1200, 'contain')} 
-                alt={event.title}
-                className="w-full h-auto max-h-[80vh] object-contain mx-auto block"
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                decoding="async"
-              />
-              {event.imagecredit && (
-                <div className="px-6 py-3 bg-slate-900/5 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Camera size={12} /> Source : {event.imagecredit}
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none text-slate-900">
+              {event.title}
+            </h1>
+            <p className="text-xl text-slate-500 font-medium leading-relaxed">
+              {event.excerpt}
+            </p>
+          </div>
+
+          {(event.image || event.video) && (
+            <div className="relative rounded-[40px] overflow-hidden shadow-2xl group border-8 border-white">
+              {event.video && getYoutubeId(event.video) ? (
+                <div className="aspect-video">
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${getYoutubeId(event.video)}`}
+                    title={event.title}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
                 </div>
+              ) : (
+                <img 
+                  src={optimizeImage(event.image || '', 1200)} 
+                  alt={event.title}
+                  className="w-full h-auto object-cover max-h-[600px]"
+                />
               )}
             </div>
           )}
-        </div>
-      )}
 
-      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-slate-100">
-        <div className="markdown-body text-lg leading-relaxed">
-          <ReactMarkdown>{event.content}</ReactMarkdown>
+          <div className="bg-white rounded-[40px] p-8 md:p-12 border border-slate-100 shadow-sm space-y-8">
+            <div className="flex flex-wrap gap-8 py-6 border-y border-slate-50 items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                  <Calendar size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Date de l'événement</p>
+                  <p className="text-lg font-black text-slate-900">{safeFormatDate(event.date, 'dd MMMM yyyy')}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                  <MapPin size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Lieu & Adresse</p>
+                  <p className="text-lg font-black text-slate-900">{event.location}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="markdown-body text-slate-600 leading-relaxed text-lg">
+              <ReactMarkdown>{event.content}</ReactMarkdown>
+            </div>
+
+            {event.gallery && event.gallery.length > 0 && (
+              <div className="space-y-6 pt-8 border-t border-slate-50">
+                <h3 className="text-xl font-black flex items-center gap-2">
+                  <Camera size={20} className="text-primary" /> Galerie Photo
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {event.gallery.map((img, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ scale: 1.05 }}
+                      className="aspect-square rounded-2xl overflow-hidden shadow-sm border border-slate-100"
+                    >
+                      <img 
+                        src={optimizeImage(img, 400)} 
+                        alt={`${event.title} gallery ${i}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {timeLeft && (
+            <div className="bg-slate-900 rounded-[40px] p-8 text-white space-y-6 relative overflow-hidden">
+              <div className="absolute inset-0 african-pattern opacity-10" />
+              <h4 className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-primary relative z-10">L'événement commence dans</h4>
+              <div className="grid grid-cols-4 gap-2 relative z-10">
+                {[
+                  { label: 'J', val: timeLeft.d },
+                  { label: 'H', val: timeLeft.h },
+                  { label: 'M', val: timeLeft.m },
+                  { label: 'S', val: timeLeft.s }
+                ].map((item, i) => (
+                  <div key={i} className="text-center p-3 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                    <p className="text-2xl font-black tracking-tighter">{item.val.toString().padStart(2, '0')}</p>
+                    <p className="text-[8px] font-black text-primary uppercase">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-[40px] p-2 overflow-hidden shadow-xl border border-slate-100 aspect-square">
+            <iframe 
+              width="100%" 
+              height="100%" 
+              style={{ border: 0, borderRadius: '32px' }}
+              loading="lazy" 
+              allowFullScreen 
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://www.google.com/maps/embed/v1/place?key=REPLACE_WITH_YOUR_GOOGLE_MAPS_API_KEY&q=${encodeURIComponent(event.location)}`}
+            />
+          </div>
+
+          <div className="bg-primary/5 rounded-[40px] p-8 space-y-4 border border-primary/10">
+            <h4 className="font-black text-primary uppercase tracking-widest text-xs">Informations Pratiques</h4>
+            <ul className="space-y-4">
+              <li className="flex gap-3 text-sm font-bold text-slate-600">
+                <Check className="text-primary shrink-0" size={18} />
+                Entrée libre pour les abonnés Premium
+              </li>
+              <li className="flex gap-3 text-sm font-bold text-slate-600">
+                <Check className="text-primary shrink-0" size={18} />
+                Places limitées, premier arrivé premier servi
+              </li>
+              <li className="flex gap-3 text-sm font-bold text-slate-600">
+                <Check className="text-primary shrink-0" size={18} />
+                Sécurité assurée sur place
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -1541,31 +1668,42 @@ const ReadAlso = ({ currentArticle, articles, onArticleClick, onAuthorClick }: {
   if (related.length === 0) return null;
 
   return (
-    <div className="my-10 p-6 bg-slate-50 border-l-4 border-secondary rounded-r-2xl">
-      <h4 className="font-display font-black text-secondary uppercase tracking-widest text-xs mb-4">Lire aussi</h4>
-      <div className="space-y-4">
+    <div className="my-10 p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-primary/10 rounded-lg text-primary">
+          <FileText size={18} />
+        </div>
+        <h4 className="font-display font-black text-slate-900 uppercase tracking-widest text-xs">À lire aussi</h4>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-sans">
         {related.map(article => (
           <button 
             key={article.id}
             id={`read-also-${article.id}`}
             onClick={() => onArticleClick(article)}
-            className="flex gap-4 group text-left w-full"
+            className="flex gap-4 group text-left w-full items-start"
           >
-            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100">
               <img 
-                src={optimizeImage(article.image, 200)} 
+                src={optimizeImage(article.image, 300)} 
                 alt={article.title} 
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                 referrerPolicy="no-referrer" 
                 loading="lazy"
                 decoding="async"
               />
             </div>
-            <div className="flex-1 py-1">
-              <h5 className="font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight line-clamp-2">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-primary uppercase tracking-tighter bg-primary/5 px-2 py-0.5 rounded-full">
+                  {article.category}
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase shrink-0">{article.readingtime}</span>
+              </div>
+              <h5 className="font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight line-clamp-3 text-sm md:text-base">
                 {article.title}
               </h5>
-              <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">{article.readingtime} de lecture</span>
             </div>
           </button>
         ))}
@@ -2786,6 +2924,8 @@ export default function App() {
   const [userBadges, setUserBadges] = useState<string[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchViewMode, setSearchViewMode] = useState<'grid' | 'list'>('grid');
+  const [isSearching, setIsSearching] = useState(false);
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
   const [filterAuthor, setFilterAuthor] = useState('');
   const [filterDate, setFilterDate] = useState('');
@@ -4364,7 +4504,7 @@ export default function App() {
       {/* Reading Progress Bar */}
       {currentView === 'article' && (
         <motion.div
-          className="fixed top-0 left-0 right-0 h-1.5 bg-primary origin-left z-[110] shadow-[0_0_10px_rgba(31,164,99,0.5)]"
+          className="fixed top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-emerald-400 to-primary origin-left z-[110] shadow-[0_2px_15px_rgba(31,164,99,0.6)]"
           style={{ scaleX }}
         />
       )}
@@ -4976,9 +5116,15 @@ export default function App() {
                     { label: "Lecture", active: true }
                   ]} />
                   
-                  <h1 className="text-2xl md:text-5xl font-display font-black leading-[1.1] tracking-tight text-slate-900 border-b-4 border-primary/10 pb-6 mb-6">
+                  <motion.h1 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-3xl md:text-6xl font-display font-black leading-[1.1] tracking-tight text-slate-900 drop-shadow-sm"
+                  >
                     {selectedArticle.title || 'Sans titre'}
-                  </h1>
+                  </motion.h1>
+                  <div className="w-24 h-2 bg-primary mx-auto rounded-full mt-6 mb-8" />
                 {selectedArticle.tags && Array.isArray(selectedArticle.tags) && selectedArticle.tags.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2">
                     {selectedArticle.tags.map(tag => (
@@ -5049,19 +5195,27 @@ export default function App() {
                     </div>
                   )}
                   {selectedArticle.image && (
-                    <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-slate-900/5">
-                      <img 
-                        id={`article-detail-img-${selectedArticle.id}`}
-                        src={optimizeImage(selectedArticle.image, 1200)} 
-                        alt={selectedArticle.title}
-                        className="w-full h-auto max-h-[80vh] object-contain mx-auto block"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        decoding="async"
-                      />
+                    <div className="w-full rounded-[40px] overflow-hidden shadow-2xl bg-white border-8 border-white">
+                      <motion.div
+                        style={{ y: useTransform(scrollYProgress, [0, 1], [0, -100]) }}
+                        className="relative"
+                      >
+                        <img 
+                          id={`article-detail-img-${selectedArticle.id}`}
+                          src={optimizeImage(selectedArticle.image, 1200)} 
+                          alt={selectedArticle.title}
+                          className="w-full h-auto max-h-[85vh] object-cover"
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </motion.div>
                       {selectedArticle.imagecredit && (
-                        <div className="px-6 py-3 bg-slate-900/5 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <Camera size={12} /> Source : {selectedArticle.imagecredit}
+                        <div className="px-8 py-4 bg-slate-900 text-[10px] font-black text-white/60 uppercase tracking-[0.2em] flex items-center gap-3 relative z-10">
+                          <div className="p-1.5 bg-white/10 rounded-lg">
+                            <Camera size={14} />
+                          </div>
+                          <span>Crédit image : {selectedArticle.imagecredit}</span>
                         </div>
                       )}
                     </div>
@@ -5240,43 +5394,29 @@ export default function App() {
                           <span className="font-bold">{(selectedArticle.commentscount || 0) + (articleComments[selectedArticle.id]?.length || 0)}</span>
                         </button>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-slate-400 uppercase">Partager</span>
-                        <button 
-                          onClick={() => handleShareArticle(selectedArticle, 'twitter')}
-                          className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-[#1DA1F2] hover:text-white transition-all"
-                          title="Partager sur Twitter"
-                        >
-                          <Twitter size={20} />
-                        </button>
-                        <button 
-                          onClick={() => handleShareArticle(selectedArticle, 'facebook')}
-                          className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-[#4267B2] hover:text-white transition-all"
-                          title="Partager sur Facebook"
-                        >
-                          <Facebook size={20} />
-                        </button>
-                        <button 
-                          onClick={() => handleShareArticle(selectedArticle, 'whatsapp')}
-                          className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-[#25D366] hover:text-white transition-all md:hidden"
-                          title="Partager sur WhatsApp"
-                        >
-                          <Smartphone size={20} />
-                        </button>
-                        <button 
-                          onClick={() => handleShareArticle(selectedArticle)}
-                          className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-primary hover:text-white transition-all"
-                          title="Plus d'options"
-                        >
-                          <Share2 size={20} />
-                        </button>
-                        <button 
-                          onClick={() => {}}
-                          className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-primary hover:text-white transition-all"
-                          title="Enregistrer"
-                        >
-                          <Bookmark size={20} fill="none" />
-                        </button>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Partager l'article</span>
+                        <div className="flex gap-3">
+                          {[
+                            { icon: Twitter, color: 'bg-[#1DA1F2]', action: () => handleShareArticle(selectedArticle, 'twitter'), label: 'Twitter' },
+                            { icon: Facebook, color: 'bg-[#4267B2]', action: () => handleShareArticle(selectedArticle, 'facebook'), label: 'Facebook' },
+                            { icon: Share2, color: 'bg-primary', action: () => handleShareArticle(selectedArticle), label: 'Partage' }
+                          ].map((social, i) => (
+                            <motion.button 
+                              key={i}
+                              whileHover={{ scale: 1.1, rotate: i % 2 === 0 ? 5 : -5 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={social.action}
+                              className={cn(
+                                "w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg transition-all",
+                                social.color
+                              )}
+                              title={social.label}
+                            >
+                              <social.icon size={20} />
+                            </motion.button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -5312,8 +5452,8 @@ export default function App() {
                                   className="flex gap-4"
                                 >
                                   <div className={cn(
-                                    "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold shrink-0",
-                                    depth > 0 ? "bg-slate-100 text-slate-400 text-xs" : "bg-primary/10 text-primary"
+                                    "w-12 h-12 md:w-16 md:h-16 rounded-3xl flex items-center justify-center font-black shrink-0 shadow-inner",
+                                    depth > 0 ? "bg-slate-100 text-slate-400 text-sm" : "bg-primary/10 text-primary text-xl"
                                   )}>
                                     {comment.username[0].toUpperCase()}
                                   </div>
@@ -5534,142 +5674,268 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="max-w-3xl mx-auto space-y-10"
+              className="max-w-5xl mx-auto space-y-12 py-6"
             >
-              <button 
-                onClick={goHome} 
-                className="text-primary text-xs font-bold flex items-center gap-1 mb-4"
-              >
-                <ArrowLeft size={14} /> Retour à l'accueil
-              </button>
-              
-                <div className="flex flex-col gap-4">
-                  <div className="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex items-center gap-4">
-                    <Search size={28} className="text-primary" />
+              <div className="space-y-6">
+                <button 
+                  onClick={goHome} 
+                  className="group inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pl-4"
+                >
+                  <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+                  Accueil
+                </button>
+                
+                {/* Minimal Glass Bar */}
+                <div className="relative z-50 px-4">
+                  <div className="bg-white/80 backdrop-blur-2xl rounded-full p-2 shadow-2xl shadow-slate-200 border border-white flex items-center gap-2 pr-6">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
+                      <Search size={22} strokeWidth={3} />
+                    </div>
                     <input 
                       autoFocus
                       type="text" 
-                      placeholder="Rechercher un article, un sujet..." 
-                      className="flex-1 text-xl font-medium outline-none text-slate-900"
+                      placeholder="Rechercher un scoop, un pays, un auteur..." 
+                      className="flex-1 bg-transparent text-xl font-bold outline-none text-slate-900 px-2 placeholder:text-slate-300"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setIsSearching(true);
+                        setTimeout(() => setIsSearching(false), 300);
+                      }}
                     />
-                    <button 
-                      onClick={() => setShowFilters(!showFilters)}
-                      className={cn(
-                        "p-3 rounded-2xl transition-all flex items-center gap-2",
-                        showFilters ? "bg-primary/10 text-primary" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                      )}
-                    >
-                      <ListIcon size={20} />
-                      <span className="hidden md:inline font-bold text-xs uppercase tracking-widest">Filtres</span>
-                    </button>
-                    {searchQuery && <button onClick={() => setSearchQuery('')} className="p-2 bg-slate-100 rounded-full text-slate-900"><X size={20} /></button>}
-                  </div>
-
-                  <AnimatePresence>
-                    {showFilters && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 overflow-hidden"
+                    <div className="flex items-center gap-2">
+                       {searchQuery && (
+                         <button 
+                          onClick={() => setSearchQuery('')} 
+                          className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-400 transition-colors"
+                         >
+                           <X size={16} strokeWidth={3} />
+                         </button>
+                       )}
+                       <div className="w-px h-8 bg-slate-100 mx-2" />
+                       <button 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={cn(
+                          "flex items-center gap-2 px-6 py-3 rounded-full transition-all text-[10px] font-black uppercase tracking-widest",
+                          showFilters ? "bg-primary text-white shadow-xl shadow-primary/20" : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                        )}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-slate-400">Par Catégorie</label>
-                            <select 
-                              value={filterCategory}
-                              onChange={(e) => setFilterCategory(e.target.value)}
-                              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none ring-1 ring-slate-100 focus:ring-primary/20"
-                            >
-                              <option value="">Toutes les catégories</option>
-                              {siteSettings?.categories?.map(c => (
-                                <option key={c} value={c}>{c}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-slate-400">Par Auteur</label>
-                            <input 
-                              type="text"
-                              placeholder="Nom de l'auteur..."
-                              value={filterAuthor}
-                              onChange={(e) => setFilterAuthor(e.target.value)}
-                              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none ring-1 ring-slate-100 focus:ring-primary/20"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-slate-400">Période</label>
-                            <select 
-                              value={filterDate}
-                              onChange={(e) => setFilterDate(e.target.value)}
-                              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none ring-1 ring-slate-100 focus:ring-primary/20"
-                            >
-                              <option value="">Toutes les dates</option>
-                              <option value="today">Aujourd'hui</option>
-                              <option value="week">Cette semaine</option>
-                              <option value="month">Ce mois</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-slate-50 flex justify-end">
-                           <button 
-                             onClick={() => {
-                               setFilterCategory('');
-                               setFilterAuthor('');
-                               setFilterDate('');
-                             }}
-                             className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors"
-                           >
-                             Réinitialiser les filtres
-                           </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <Filter size={14} />
+                        Filtres
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Pill-shaped Advanced Filters */}
+                <AnimatePresence>
+                  {showFilters && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+                      exit={{ opacity: 0, y: -20, height: 0 }}
+                      className="px-4 overflow-hidden"
+                    >
+                      <div className="bg-slate-50 rounded-[2.5rem] p-8 mt-4 space-y-8">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {/* Categories Pills */}
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] italic">Catégories</h4>
+                               <div className="flex flex-wrap gap-2">
+                                  {['Tout', ...(siteSettings?.categories || [])].slice(0, 8).map(c => (
+                                    <button
+                                      key={c}
+                                      onClick={() => setFilterCategory(c === 'Tout' ? '' : c)}
+                                      className={cn(
+                                        "px-4 py-2 rounded-full text-[10px] font-bold transition-all whitespace-nowrap",
+                                        (filterCategory === c || (c === 'Tout' && !filterCategory)) 
+                                          ? "bg-slate-900 text-white shadow-lg" 
+                                          : "bg-white border border-slate-100 text-slate-500 hover:bg-slate-100"
+                                      )}
+                                    >
+                                      {c}
+                                    </button>
+                                  ))}
+                               </div>
+                            </div>
+
+                            {/* Authors Pills */}
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] italic">Auteurs Populaires</h4>
+                               <div className="flex flex-wrap gap-2">
+                                  {['Tout', 'Koffi', 'Diallo', 'Ouattara', 'Yeboah'].map(a => (
+                                    <button
+                                      key={a}
+                                      onClick={() => setFilterAuthor(a === 'Tout' ? '' : a)}
+                                      className={cn(
+                                        "px-4 py-2 rounded-full text-[10px] font-bold transition-all whitespace-nowrap",
+                                        (filterAuthor === a || (a === 'Tout' && !filterAuthor)) 
+                                          ? "bg-primary text-white shadow-lg" 
+                                          : "bg-white border border-slate-100 text-slate-500 hover:bg-slate-100"
+                                      )}
+                                    >
+                                      {a}
+                                    </button>
+                                  ))}
+                               </div>
+                            </div>
+
+                            {/* Date Toggles */}
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] italic">Date de publication</h4>
+                               <div className="flex flex-col gap-2">
+                                  {[
+                                    { id: '', label: 'Toutes les dates' },
+                                    { id: 'today', label: 'Aujourd\'hui' },
+                                    { id: 'week', label: 'Cette semaine' },
+                                    { id: 'month', label: 'Ce mois' }
+                                  ].map(d => (
+                                    <button
+                                      key={d.id}
+                                      onClick={() => setFilterDate(d.id)}
+                                      className={cn(
+                                        "w-full px-6 py-3 rounded-2xl text-left text-[10px] font-black uppercase transition-all flex items-center justify-between",
+                                        filterDate === d.id ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                      )}
+                                    >
+                                      {d.label}
+                                      {filterDate === d.id && <div className="w-1.5 h-1.5 bg-primary rounded-full" />}
+                                    </button>
+                                  ))}
+                               </div>
+                            </div>
+                         </div>
+                         <div className="pt-6 border-t border-slate-200 flex justify-between items-center">
+                            <p className="text-[9px] font-bold text-slate-400 italic">Combinez les filtres pour affiner vos résultats.</p>
+                            <button 
+                              onClick={() => {
+                                setFilterCategory('');
+                                setFilterAuthor('');
+                                setFilterDate('');
+                                setShowFilters(false);
+                              }}
+                              className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                            >
+                              Réinitialiser tout
+                            </button>
+                         </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {searchQuery ? (
-                <div className="space-y-6">
-                  <h3 className="font-black text-xl text-slate-900">
-                    {searchResults.length} {searchResults.length > 1 ? 'résultats' : 'résultat'} pour "{searchQuery}"
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-8 px-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-3">
+                           <h2 className="text-3xl font-black italic tracking-tighter">Résultats</h2>
+                           {isSearching ? (
+                             <div className="flex gap-1">
+                                <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                                <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                             </div>
+                           ) : (
+                             <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black">
+                               {searchResults.length}
+                             </span>
+                           )}
+                        </div>
+                        <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mt-1">Pour "{searchQuery}"</p>
+                    </div>
+
+                    <div className="flex bg-slate-100 p-1 rounded-full">
+                       <button 
+                        onClick={() => setSearchViewMode('grid')}
+                        className={cn("p-2.5 rounded-full transition-all", searchViewMode === 'grid' ? "bg-white text-slate-900 shadow-md" : "text-slate-400")}
+                       >
+                          <LayoutGrid size={18} />
+                       </button>
+                       <button 
+                        onClick={() => setSearchViewMode('list')}
+                        className={cn("p-2.5 rounded-full transition-all", searchViewMode === 'list' ? "bg-white text-slate-900 shadow-md" : "text-slate-400")}
+                       >
+                          <LayoutList size={18} />
+                       </button>
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "grid gap-8",
+                    searchViewMode === 'grid' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+                  )}>
                     {displayedSearchResults.map(article => (
                       <ArticleCard 
                         key={article.id} 
                         article={article} 
-                        variant="vertical" 
+                        variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} 
                         onClick={() => handleArticleClick(article)}
-                        onBookmark={() => {}}
-                        isBookmarked={false}
+                        onBookmark={(id, e) => handleBookmarkArticle(id, e)}
+                        isBookmarked={userBookmarkedArticles.has(article.id)}
+                        onAuthorClick={handleAuthorClick}
                       />
                     ))}
                   </div>
 
                   {displayedSearchResults.length < searchResults.length && (
-                    <div ref={searchLoadingRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 py-10">
-                      <ArticleSkeleton />
-                      <ArticleSkeleton />
+                    <div ref={searchLoadingRef} className={cn(
+                        "grid gap-8 py-10",
+                        searchViewMode === 'grid' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+                    )}>
+                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} />
+                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <h3 className="font-black text-xs uppercase tracking-wider text-slate-400">Tendances</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {['ZLECAf', 'Innovation Abidjan', 'Afrobeat 2026', 'Climat Afrique', 'Économie Numérique'].map(tag => (
-                        <button 
-                          key={tag} 
-                          onClick={() => setSearchQuery(tag)}
-                          className="px-6 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold hover:border-primary hover:text-primary transition-all shadow-sm text-slate-900"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
+                <div className="space-y-12 px-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                     <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                           <History size={20} className="text-slate-300" />
+                           <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-400">Recherches Récentes</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['Can 2025', 'Politique Mali', 'Akwaba Africa', 'Élection CI'].map(q => (
+                            <button 
+                              key={q} 
+                              onClick={() => setSearchQuery(q)}
+                              className="px-5 py-3 bg-white border border-slate-100 rounded-2xl text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-all shadow-sm"
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                     </div>
+
+                     <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                           <TrendingUp size={20} className="text-primary" />
+                           <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-400">Tendances du moment</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['ZLECAf', 'Innovation Abidjan', 'Afrobeat 2026', 'Climat Afrique', 'Économie Numérique', 'Startups Tech'].map(tag => (
+                            <button 
+                              key={tag} 
+                              onClick={() => setSearchQuery(tag)}
+                              className="px-6 py-3 bg-primary/5 border border-primary/10 rounded-2xl text-xs font-black text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                            >
+                              #{tag}
+                            </button>
+                          ))}
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-[3rem] p-12 text-center space-y-6 border border-slate-100">
+                     <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-xl">
+                        <Search size={32} className="text-slate-200" />
+                     </div>
+                     <div className="space-y-2">
+                        <h4 className="text-xl font-black italic">Plus de 50 000 articles</h4>
+                        <p className="text-slate-400 text-sm font-medium max-w-sm mx-auto">Découvrez l'Afrique comme vous ne l'avez jamais lue à travers nos archives exclusives.</p>
+                     </div>
                   </div>
                 </div>
               )}
@@ -5694,182 +5960,256 @@ export default function App() {
           ) : currentView === 'donate' ? (
             <motion.div 
               key="donate"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4 }}
-              className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center py-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="max-w-6xl mx-auto py-12 px-4"
             >
-              <div className="lg:col-span-2">
-                <button onClick={goHome} className="text-primary text-xs font-bold flex items-center gap-1 mb-4">
-                  <ArrowLeft size={14} /> Retour à l'accueil
-                </button>
-              </div>
+              <div className="flex flex-col lg:flex-row gap-16 items-start">
+                  {/* Left Column: Context & Goal */}
+                  <div className="lg:w-1/2 space-y-12 lg:sticky lg:top-24">
+                    <button 
+                      onClick={goHome} 
+                      className="group inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest"
+                    >
+                      <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+                      Retour à l'accueil
+                    </button>
 
-              {donationSuccess ? (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="lg:col-span-2 bg-white rounded-[40px] p-12 text-center shadow-2xl border border-slate-100 space-y-6"
-                >
-                  <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Heart size={40} fill="currentColor" />
-                  </div>
-                  <h2 className="text-3xl font-black">Merci pour votre générosité !</h2>
-                  <p className="text-slate-600 max-w-md mx-auto">
-                    Votre don de <span className="font-bold text-slate-900">{selectedAmount} F</span> a été reçu avec succès. Vous recevrez un reçu par email sous peu.
-                  </p>
-                  <button 
-                    onClick={() => { setDonationSuccess(false); goHome(); }}
-                    className="bg-primary text-white px-8 py-3 rounded-xl font-bold"
-                  >
-                    Retour à l'accueil
-                  </button>
-                </motion.div>
-              ) : (
-                <>
-                  <div className="space-y-6">
-                    <h2 className="text-4xl md:text-6xl font-black leading-tight">
-                      Soutenez le journalisme <span className="text-primary">indépendant</span>.
-                    </h2>
-                    <p className="text-lg text-slate-600 leading-relaxed">
-                      Akwaba Info s'engage à fournir une information de qualité, vérifiée et sans compromis sur l'actualité du continent africain. Votre don nous aide à rester libres.
-                    </p>
-                  </div>
-
-                  <div className="bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100 space-y-8">
-                    <div className="space-y-4">
-                      <h4 className="font-bold text-sm">Choisissez un montant</h4>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {siteSettings.donationamounts?.map(amount => (
-                          <button 
-                            key={amount} 
-                            onClick={() => setSelectedAmount(amount.toString())}
-                            className={cn(
-                              "py-4 border-2 rounded-2xl text-sm font-black transition-all",
-                              selectedAmount === amount.toString() 
-                                ? "border-primary bg-primary/5 text-primary shadow-inner" 
-                                : "border-slate-100 hover:border-primary/30"
-                            )}
-                          >
-                            {amount} F
-                          </button>
-                        ))}
-                      </div>
-                      <div className="relative mt-2">
-                         <input 
-                            type="number" 
-                            placeholder="Autre montant libre..." 
-                            onChange={(e) => setSelectedAmount(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none"
-                         />
-                      </div>
+                    <div className="space-y-6">
+                       <h2 className="text-4xl md:text-7xl font-black tracking-tighter leading-[0.9]">
+                          Soutenez la <br/>
+                          <span className="text-primary italic">Liberté</span> de <br/>
+                          l'information.
+                       </h2>
+                       <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-lg">
+                          Akwaba Info est un média 100% indépendant. Chaque don nous permet de financer nos reporters sur le terrain et de maintenir notre plateforme sans publicité intrusive.
+                       </p>
                     </div>
-                    
-                    <div className="space-y-4">
-                      <h4 className="font-bold text-sm font-display uppercase tracking-widest text-[10px] text-slate-400">Mode de paiement sécurisé</h4>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(siteSettings.activepaymentmethods || {}).filter(([_, active]) => active).map(([method]) => (
-                          <button 
-                            key={method}
-                            onClick={() => setSelectedPayment(method)}
-                            className={cn(
-                              "flex flex-col items-start justify-between p-4 border-2 rounded-2xl transition-all h-24 relative overflow-hidden",
-                              selectedPayment === method
-                                ? "border-primary bg-primary/5 text-primary"
-                                : "border-slate-100 hover:bg-slate-50"
-                            )}
-                          >
-                            {selectedPayment === method && <div className="absolute top-2 right-2 text-primary animate-in zoom-in"><CheckCircle size={16} fill="white" /></div>}
-                            {getPaymentIcon(method, selectedPayment === method)}
-                            <span className="text-[10px] font-black uppercase tracking-wider">{getPaymentLabel(method)}</span>
-                          </button>
-                        ))}
-                      </div>
 
-                      {selectedPayment && (
-                        <motion.div 
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          className="space-y-6 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4"
-                        >
-                          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                             <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-inner">
-                                {(() => {
-                                  const details = (() => {
-                                    switch(selectedPayment) {
-                                      case 'paypal': return siteSettings.paymentlinks?.paypal;
-                                      case 'stripe': return siteSettings.paymentlinks?.stripe;
-                                      case 'flutterwave': return siteSettings.paymentlinks?.flutterwave;
-                                      case 'orangeMoney': return siteSettings.orangemoneynumber ? `Transfert au ${siteSettings.orangemoneynumber}` : null;
-                                      case 'wave': return siteSettings.wavenumber ? `Transfert au ${siteSettings.wavenumber}` : null;
-                                      case 'mtn': return siteSettings.mtnmoneynumber ? `Transfert au ${siteSettings.mtnmoneynumber}` : null;
-                                      case 'moov': return siteSettings.moovmoneynumber ? `Transfert au ${siteSettings.moovmoneynumber}` : null;
-                                      default: return siteSettings.paymentlinks?.[selectedPayment as keyof typeof siteSettings.paymentlinks] || "Instructions manuelles";
-                                    }
-                                  })();
-                                  
-                                  const isUrl = details?.toString().startsWith('http');
-                                  
-                                  if (isUrl) {
-                                    return (
-                                      <div className="text-center space-y-4">
-                                        <p className="text-xs text-slate-500">Un lien de paiement externe sera utilisé :</p>
-                                        <a href={details} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm">
-                                          Ouvrir le portail {getPaymentLabel(selectedPayment)} <ExternalLink size={16} />
-                                        </a>
-                                      </div>
-                                    );
-                                  }
-                                  
-                                  return (
-                                    <div className="text-center space-y-4">
-                                      <div className="space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Numéro de réception</p>
-                                        <p className="text-2xl font-black tracking-widest text-slate-900">{details?.toString().split(' ').pop() || "NON CONFIGURÉ"}</p>
-                                      </div>
-                                      <div className="pt-4 border-t border-slate-100">
-                                         <p className="text-[10px] font-black uppercase text-slate-400 mb-2">ID de Transaction / Référence SMS</p>
-                                         <input 
-                                           type="text"
-                                           placeholder="Ex: T240122.1234.C..."
-                                           value={transactionId}
-                                           onChange={(e) => setTransactionId(e.target.value)}
-                                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                                         />
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                             </div>
+                    {/* Goal Progress Bento */}
+                    <div className="bg-slate-50 rounded-[2.5rem] p-10 space-y-8 border border-slate-100">
+                       <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] italic">Objectif du mois</h4>
+                          <span className="text-primary font-black italic">75% atteint</span>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="h-6 bg-white rounded-full overflow-hidden p-1 shadow-inner ring-1 ring-slate-100">
+                             <motion.div 
+                               initial={{ width: 0 }}
+                               animate={{ width: '75%' }}
+                               transition={{ duration: 1.5, ease: "circOut" }}
+                               className="h-full bg-gradient-to-r from-primary to-emerald-400 rounded-full shadow-lg shadow-primary/20 relative"
+                             >
+                                <div className="absolute inset-0 bg-white/20 African-pattern opacity-30" />
+                             </motion.div>
                           </div>
+                          <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-400">
+                             <span>0 FCFA</span>
+                             <span className="text-slate-900">1 000 000 FCFA</span>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                             <TrendingUp size={20} />
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-500 leading-tight">PLUS DE 142 DONATEURS ONT DÉJÀ CONTRIBUÉ CE MOIS-CI.</p>
+                       </div>
+                    </div>
+                  </div>
 
-                          <button 
-                            onClick={() => {
-                              if (!transactionId || transactionId.length < 5) {
-                                alert("Veuillez entrer la référence ou l'ID de transaction reçu par SMS/Email pour vérification.");
-                                return;
-                              }
-                              const amountVal = parseInt(selectedAmount) || 0;
-                              if (!amountVal || amountVal <= 0) {
-                                alert("Veuillez choisir un montant.");
-                                return;
-                              }
-                              handleConfirmPayment(amountVal, selectedPayment, 'donation', transactionId).then(() => {
-                                 setDonationSuccess(true);
-                                 setTransactionId('');
-                              });
-                            }}
-                            className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-lg shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                          >
-                            ✅ CONFIRMER MON DON
-                          </button>
+                  {/* Right Column: Donation Form Card */}
+                  <div className="lg:w-1/2 w-full">
+                    <AnimatePresence mode="wait">
+                      {donationSuccess ? (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-white rounded-[3.5rem] p-12 text-center shadow-2xl border border-slate-100 space-y-8 relative overflow-hidden"
+                        >
+                          <div className="absolute inset-0 African-pattern opacity-5 pointer-events-none" />
+                          <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                            <Heart size={48} fill="currentColor" className="animate-pulse" />
+                            <motion.div 
+                              animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }} 
+                              transition={{ repeat: Infinity, duration: 2 }}
+                              className="absolute inset-0 border-4 border-primary rounded-full" 
+                            />
+                          </div>
+                          <div className="space-y-4">
+                             <h2 className="text-4xl font-black italic tracking-tighter">Générosité Infinie.</h2>
+                             <p className="text-slate-500 font-medium max-w-sm mx-auto">
+                                Votre contribution de <span className="font-bold text-slate-900">{selectedAmount} FCFA</span> a été enregistrée. Merci de faire partie de l'aventure Akwaba Info.
+                             </p>
+                          </div>
+                          <div className="pt-8 space-y-4">
+                             <button 
+                               onClick={() => { setDonationSuccess(false); goHome(); }}
+                               className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary transition-all shadow-xl"
+                             >
+                               Retour aux actualités
+                             </button>
+                             <p className="text-[9px] font-black uppercase text-slate-300 tracking-widest italic">Un reçu vous sera envoyé par email</p>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div 
+                          key="form"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl shadow-slate-200/50 border border-slate-100 space-y-12"
+                        >
+                          <div className="space-y-6">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2rem] italic">Étape 1 : Le Montant</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {[5000, 10000, 25000, 50000, 100000].map(amount => (
+                                <button 
+                                  key={amount} 
+                                  onClick={() => setSelectedAmount(amount.toString())}
+                                  className={cn(
+                                    "px-6 py-5 rounded-[2rem] text-sm font-black transition-all flex flex-col items-center gap-1",
+                                    selectedAmount === amount.toString() 
+                                      ? "bg-primary text-white shadow-xl shadow-primary/20 scale-105" 
+                                      : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                                  )}
+                                >
+                                  <span>{amount.toLocaleString()}</span>
+                                  <span className="text-[8px] opacity-70">FCFA</span>
+                                </button>
+                              ))}
+                              <div className="relative">
+                                 <input 
+                                    type="number" 
+                                    placeholder="Autre..." 
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setSelectedAmount(e.target.value)}
+                                    className="w-full h-full bg-slate-50 border border-transparent rounded-[2rem] px-6 text-sm font-black outline-none focus:border-primary transition-all text-center placeholder:text-slate-300"
+                                 />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-6">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2rem] italic">Étape 2 : Mode de Paiement</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              {Object.entries(siteSettings.activepaymentmethods || {}).filter(([_, active]) => active).map(([method]) => (
+                                <button 
+                                  key={method}
+                                  onClick={() => setSelectedPayment(method)}
+                                  className={cn(
+                                    "group flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border-2 transition-all aspect-square",
+                                    selectedPayment === method
+                                      ? "border-primary bg-primary/5 text-primary shadow-lg shadow-primary/5"
+                                      : "border-slate-50 bg-slate-50 hover:bg-white hover:border-slate-200"
+                                  )}
+                                >
+                                  <div className="p-2 transition-transform group-hover:scale-110">
+                                     {getPaymentIcon(method, selectedPayment === method)}
+                                  </div>
+                                  <span className="text-[8px] font-black uppercase tracking-widest text-center">{getPaymentLabel(method)}</span>
+                                </button>
+                              ))}
+                            </div>
+
+                            <AnimatePresence>
+                              {selectedPayment && (
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="overflow-hidden pt-4"
+                                >
+                                  <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-6 shadow-2xl relative overflow-hidden group">
+                                     <div className="absolute inset-0 African-pattern opacity-10 pointer-events-none" />
+                                     <div className="text-center space-y-6 relative z-10">
+                                        {(() => {
+                                          const details = (() => {
+                                            switch(selectedPayment) {
+                                              case 'paypal': return siteSettings.paymentlinks?.paypal;
+                                              case 'stripe': return siteSettings.paymentlinks?.stripe;
+                                              case 'flutterwave': return siteSettings.paymentlinks?.flutterwave;
+                                              case 'orangeMoney': return siteSettings.orangemoneynumber;
+                                              case 'wave': return siteSettings.wavenumber;
+                                              case 'mtn': return siteSettings.mtnmoneynumber;
+                                              case 'moov': return siteSettings.moovmoneynumber;
+                                              default: return "INSTRUCTIONS";
+                                            }
+                                          })();
+                                          
+                                          const isUrl = details?.toString().startsWith('http');
+                                          
+                                          if (isUrl) {
+                                            return (
+                                              <div className="space-y-6">
+                                                <p className="text-xs text-white/50 font-bold uppercase tracking-widest">Paiement Sécurisé via Portail</p>
+                                                <a href={details} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 bg-primary text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all">
+                                                  Ouvrir {getPaymentLabel(selectedPayment)} <ExternalLink size={14} />
+                                                </a>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
+                                            <div className="space-y-10">
+                                              <div className="space-y-2">
+                                                <p className="text-[9px] font-black uppercase text-primary tracking-[0.3em]">Numéro du Receveur</p>
+                                                <p className="text-4xl font-black tracking-tighter italic">{details || "00 00 00 00"}</p>
+                                              </div>
+                                              <div className="space-y-4 text-left">
+                                                 <label className="text-[9px] font-black uppercase text-white/40 tracking-widest px-1">ID de Transaction / Référence SMS</label>
+                                                 <input 
+                                                   type="text"
+                                                   placeholder="Collez ici le code de confirmation..."
+                                                   value={transactionId}
+                                                   onChange={(e) => setTransactionId(e.target.value)}
+                                                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-primary transition-all text-white placeholder:text-white/20"
+                                                 />
+                                              </div>
+                                            </div>
+                                          );
+                                        })()}
+                                     </div>
+                                  </div>
+                                  
+                                  <motion.button 
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => {
+                                      if (!transactionId && !siteSettings.paymentlinks?.[selectedPayment as keyof typeof siteSettings.paymentlinks]?.toString().startsWith('http')) {
+                                        alert("Veuillez entrer la référence de transaction.");
+                                        return;
+                                      }
+                                      const amountVal = parseInt(selectedAmount) || 0;
+                                      handleConfirmPayment(amountVal, selectedPayment, 'donation', transactionId).then(() => {
+                                         confetti({
+                                           particleCount: 150,
+                                           spread: 70,
+                                           origin: { y: 0.6 },
+                                           colors: ['#1FA463', '#000000', '#FFCC00']
+                                         });
+                                         setDonationSuccess(true);
+                                         setTransactionId('');
+                                      });
+                                    }}
+                                    className="w-full mt-8 bg-primary text-white py-6 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3"
+                                  >
+                                    Finaliser mon Don
+                                  </motion.button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 justify-center grayscale opacity-30 mt-10">
+                             <Shield size={20} />
+                             <Lock size={20} />
+                             <span className="text-[8px] font-black uppercase tracking-widest">Sécurité 256-bit SSL</span>
+                          </div>
                         </motion.div>
                       )}
-                    </div>
+                    </AnimatePresence>
                   </div>
-                </>
-              )}
+              </div>
             </motion.div>
           ) : currentView === 'webtv' ? (
             <motion.div 

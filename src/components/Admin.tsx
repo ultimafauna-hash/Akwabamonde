@@ -59,6 +59,7 @@ import {
   Link as LinkIcon,
   List as ListIcon,
   TrendingUp,
+  Play,
   Mic,
   Music,
   Headset,
@@ -772,55 +773,54 @@ export const AdminDashboard = ({
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-slate-100 flex flex-col transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-50 w-[280px] bg-slate-900 flex flex-col transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-8 shrink-0">
           <div className="flex items-center gap-3">
-             <img 
-               src="https://raw.githubusercontent.com/Akwabanews/Sources/main/images/2DB685A1-EE6B-478E-B70B-58F490D2948A.jpeg" 
-               className="w-10 h-10 rounded-xl border border-slate-100 p-1 object-contain bg-white" 
-               alt="Logo" 
-             />
+             <div className="w-10 h-10 rounded-xl bg-white/10 p-2 flex items-center justify-center">
+                <img 
+                  src="https://raw.githubusercontent.com/Akwabanews/Sources/main/images/2DB685A1-EE6B-478E-B70B-58F490D2948A.jpeg" 
+                  className="w-full h-full object-contain filter invert" 
+                  alt="Logo" 
+                />
+             </div>
              <div>
                <div className="flex items-center gap-1.5">
                  <h1 className="text-xl font-black italic tracking-tighter">
-                   <span className="text-slate-950">AKWABA</span> <span className="text-primary">ADMIN</span>
+                   <span className="text-white">AKWABA</span> <span className="text-primary">ADMIN</span>
                  </h1>
-                 <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
-                   <Check size={10} strokeWidth={4} />
-                 </div>
                </div>
-               <p className="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em]">Management Suite v2</p>
+               <p className="text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">SÉCURISÉ • v2.4.0</p>
              </div>
           </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-1 no-scrollbar">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'articles', label: 'Articles', icon: FileText },
+            { id: 'dashboard', label: 'Tableau de Bord', icon: LayoutDashboard },
+            { id: 'articles', label: 'Rédaction Articles', icon: FileText },
             { id: 'events', label: 'Événements', icon: Calendar },
             { id: 'culture', label: 'Histoire & Culture', icon: Sparkles },
             { id: 'history', label: 'Ce jour Histoire', icon: History },
             { id: 'map', label: 'Carte Akwaba', icon: MapIcon },
             { id: 'quiz', label: 'Quiz & Défis', icon: Trophy },
             { id: 'diaspora', label: 'Diaspora Stories', icon: Globe },
-            { id: 'polls', label: 'Sondages', icon: BarChart3 },
-            { id: 'live-blog', label: 'Direct', icon: Zap },
-            { id: 'web-tv', label: 'Web TV', icon: Tv },
-            { id: 'team', label: 'Équipe', icon: Users },
-            { id: 'classifieds', label: 'Annonces', icon: Megaphone },
-            { id: 'comments', label: 'Commentaires', icon: MessageSquare },
-            { id: 'media', label: 'Médias', icon: ImagePlus },
-            { id: 'subscribers', label: 'Abonnés', icon: Users },
+            { id: 'polls', label: 'Sondages / Votes', icon: BarChart3 },
+            { id: 'live-blog', label: 'Direct / Live', icon: Zap },
+            { id: 'web-tv', label: 'Web TV Video', icon: Tv },
+            { id: 'team', label: 'Équipe Éditoriale', icon: Users },
+            { id: 'classifieds', label: 'Petites Annonces', icon: Megaphone },
+            { id: 'comments', label: 'Modération', icon: MessageSquare },
+            { id: 'media', label: 'Médiathèque', icon: ImagePlus },
+            { id: 'subscribers', label: 'Communauté', icon: Users },
             { id: 'kyc', label: 'Vérification KYC', icon: UserCheck },
             { id: 'support', label: 'Support Direct', icon: Headset },
             { id: 'analytics', label: 'Statistiques', icon: Activity },
             { id: 'activity-log', label: 'Sécurité & Logs', icon: ShieldCheck },
-            { id: 'payments', label: 'Paiements', icon: CreditCard },
-            { id: 'admin-profile', label: 'Mon Profil Admin', icon: User },
-            { id: 'settings', label: 'Paramètres', icon: Settings },
+            { id: 'payments', label: 'Finances', icon: CreditCard },
+            { id: 'admin-profile', label: 'Compte Admin', icon: User },
+            { id: 'settings', label: 'Configuration', icon: Settings },
           ].map(item => (
             <button
               key={item.id}
@@ -829,25 +829,33 @@ export const AdminDashboard = ({
                 setIsSidebarOpen(false);
               }}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all group",
                 activeTab === item.id 
-                  ? "bg-primary/5 text-primary" 
-                  : "text-slate-500 hover:bg-slate-50"
+                  ? "bg-primary text-white shadow-xl shadow-primary/20" 
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
               )}
             >
-              <item.icon size={18} className={activeTab === item.id ? "text-primary" : "text-slate-400"} />
+              <item.icon size={18} className={activeTab === item.id ? "text-white" : "text-slate-500 group-hover:text-primary"} />
               {item.label}
               {activeTab === item.id && (
-                <motion.div layoutId="active-pill" className="ml-auto w-1 h-5 bg-primary rounded-full" />
+                <motion.div layoutId="active-pill" className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />
               )}
             </button>
           ))}
         </nav>
 
-        <div className="p-6 border-t border-slate-100 space-y-4">
+        <div className="p-6 border-t border-white/5 space-y-4">
+           <div className="bg-white/5 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <ShieldCheck size={16} />
+                 </div>
+                 <div className="text-[10px] font-black uppercase text-white/60 tracking-widest cursor-default">Système En Ligne</div>
+              </div>
+           </div>
            <button 
              onClick={onLogout}
-             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors"
            >
              <LogOut size={18} />
              Déconnexion
@@ -964,84 +972,129 @@ export const AdminDashboard = ({
               )}
 
               {activeTab === 'dashboard' && (
-                  <div className="space-y-8 pb-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-12 pb-20">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                       {[
-                        { label: 'Total Articles', value: articles.length, icon: FileText, color: 'text-primary', bg: 'bg-primary/5' },
-                        { label: 'Vues Totales', value: (stats?.totalViews ?? articles.reduce((acc, a) => acc + (a.views || 0), 0)).toLocaleString(), icon: Eye, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
-                        { label: 'Abonnés', value: (stats?.totalSubscribers ?? subscribers.length).toLocaleString(), icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
-                        { label: 'Revenu Mensuel', value: `${(stats?.totalRevenue || 0).toLocaleString()} XOF`, icon: CreditCard, color: 'text-amber-500', bg: 'bg-amber-500/5' }
+                        { label: 'Rédaction', value: articles.length, icon: FileText, gradient: 'from-blue-600 to-indigo-600', trend: '+12%' },
+                        { label: 'Audience', value: (stats?.totalViews ?? 0).toLocaleString(), icon: Play, gradient: 'from-primary to-emerald-600', trend: '+24%' },
+                        { label: 'Inscrits', value: (stats?.totalSubscribers ?? subscribers.length).toLocaleString(), icon: Users, gradient: 'from-purple-600 to-pink-600', trend: '+8%' },
+                        { label: 'Trésorerie', value: `${(stats?.totalRevenue || 0).toLocaleString()} FCFA`, icon: CreditCard, gradient: 'from-amber-500 to-orange-600', trend: '+31%' }
                       ].map((stat, i) => (
                         <motion.div 
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: i * 0.1 }}
                           key={stat.label} 
-                          className="bg-white border border-slate-100 p-8 rounded-[35px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group"
+                          className="relative overflow-hidden bg-white rounded-[2rem] p-4 md:p-6 shadow-sm border border-slate-100 group"
                         >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className={cn("p-4 rounded-2xl", stat.bg)}>
-                              <stat.icon className={stat.color} size={28} />
-                            </div>
-                            <TrendingUp className="text-slate-200" size={24} />
+                          <div className={cn("absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-[0.03] -mr-8 -mt-8 rounded-full", stat.gradient)} />
+                          <div className="flex items-start justify-between relative z-10">
+                             <div className={cn("p-3 rounded-2xl bg-gradient-to-br text-white shadow-lg", stat.gradient)}>
+                                <stat.icon size={20} strokeWidth={3} />
+                             </div>
+                             <div className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">{stat.trend}</div>
                           </div>
-                          <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{stat.label}</p>
-                          <h3 className="text-3xl font-black mt-2 text-slate-800 italic">{stat.value}</h3>
+                          <div className="mt-4 relative z-10">
+                             <h3 className="text-xl md:text-2xl font-black text-slate-800 tracking-tighter truncate">{stat.value}</h3>
+                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mt-0.5">{stat.label}</p>
+                          </div>
                         </motion.div>
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                       <div className="lg:col-span-2 bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden">
-                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xl font-black text-slate-800">Articles Récents</h3>
-                            <button onClick={() => setActiveTab('articles')} className="text-[10px] font-black uppercase text-primary tracking-widest">Voir tout</button>
-                         </div>
-                         <div className="overflow-x-auto">
-                            <table className="w-full">
-                               <thead>
-                                  <tr className="text-left border-b border-slate-50">
-                                     <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Article</th>
-                                     <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Catégorie</th>
-                                     <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Vues</th>
-                                     <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Action</th>
-                                  </tr>
-                               </thead>
-                               <tbody className="divide-y divide-slate-50">
-                                  {articles.slice(0, 5).map(article => (
-                                    <tr key={article.id} className="group hover:bg-slate-50 transition-colors">
-                                      <td className="py-4">
-                                        <div className="flex items-center gap-4">
-                                           <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                                              {article.image && <img src={article.image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
-                                           </div>
-                                           <div className="min-w-0">
-                                              <p className="font-bold text-slate-900 truncate max-w-[200px]">{article.title}</p>
-                                              <p className="text-[10px] text-slate-400 font-bold uppercase">{safeFormatDateAdmin(article.date)}</p>
-                                           </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                       {/* Bento Item 1: Main Feed */}
+                       <div className="lg:col-span-8 space-y-8">
+                          <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-xl shadow-slate-200/50">
+                             <div className="flex items-center justify-between mb-10">
+                                <div>
+                                   <h3 className="text-2xl font-black italic tracking-tighter">Activités Récentes</h3>
+                                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Flux en temps réel de votre rédaction</p>
+                                </div>
+                                <button onClick={() => setActiveTab('articles')} className="p-3 bg-slate-50 hover:bg-primary hover:text-white rounded-2xl transition-all">
+                                   <ArrowRight size={20} />
+                                </button>
+                             </div>
+                             
+                             <div className="space-y-6">
+                                {articles.slice(0, 5).map((article, i) => (
+                                  <motion.div 
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    key={article.id}
+                                    className="flex items-center gap-6 p-4 rounded-3xl hover:bg-slate-50 transition-all group"
+                                  >
+                                     <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-md">
+                                        <img src={optimizeImage(article.imageurl, 100)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                                     </div>
+                                     <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                           <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase rounded-md tracking-wider">{article.category}</span>
+                                           <span className="text-[10px] text-slate-300">•</span>
+                                           <span className="text-[9px] font-bold text-slate-400 uppercase">{safeFormatDate(article.date)}</span>
                                         </div>
-                                      </td>
-                                      <td className="py-4">
-                                         <span className="px-3 py-1 bg-primary/5 text-primary rounded-lg text-[10px] font-black uppercase">{article.category}</span>
-                                      </td>
-                                      <td className="py-4">
-                                         <div className="flex items-center gap-1 text-slate-600 text-xs font-bold">
-                                            <Eye size={14} /> {article.views || 0}
-                                         </div>
-                                      </td>
-                                      <td className="py-4 text-right">
-                                         <button 
-                                           onClick={() => onEditArticle(article)}
-                                           className="p-2 text-slate-400 hover:text-primary transition-colors"
-                                         >
-                                           <Edit3 size={18} />
-                                         </button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                               </tbody>
-                            </table>
-                         </div>
+                                        <h4 className="font-bold text-slate-800 truncate group-hover:text-primary transition-colors">{article.title}</h4>
+                                     </div>
+                                     <div className="hidden sm:flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
+                                           <Eye size={12} /> {article.views || 0}
+                                        </div>
+                                        <div className="flex gap-1">
+                                           <button onClick={() => onEditArticle(article)} className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit3 size={16} /></button>
+                                        </div>
+                                     </div>
+                                  </motion.div>
+                                ))}
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             {/* Support Quick View */}
+                             <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden group">
+                                <Activity className="absolute -right-8 -bottom-8 w-48 h-48 text-white/5 group-hover:rotate-12 transition-transform duration-1000" />
+                                <div className="space-y-6 relative z-10">
+                                   <div className="flex items-center justify-between">
+                                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                                         <Headset size={24} className="text-primary" />
+                                      </div>
+                                      <span className="text-[10px] font-black bg-primary px-3 py-1 rounded-full uppercase tracking-widest">En Ligne</span>
+                                   </div>
+                                   <div>
+                                      <h3 className="text-xl font-black italic">Support Direct</h3>
+                                      <p className="text-white/50 text-sm mt-1">Gérez les demandes d'assistance en direct.</p>
+                                   </div>
+                                   <button 
+                                    onClick={() => setActiveTab('support')}
+                                    className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                   >
+                                      Ouvrir le centre de support
+                                   </button>
+                                </div>
+                             </div>
+
+                             {/* KYC Monitor */}
+                             <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
+                                <div className="space-y-4">
+                                   <div className="flex items-center justify-between">
+                                      <div className="p-3 bg-amber-50 text-amber-500 rounded-2xl">
+                                         <UserCheck size={24} />
+                                      </div>
+                                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Action requise</span>
+                                   </div>
+                                   <div>
+                                      <h3 className="text-xl font-black italic">Vérification KYC</h3>
+                                      <p className="text-slate-400 text-sm mt-1">{pendingKYCUsers.length} dossiers en attente de validation.</p>
+                                   </div>
+                                </div>
+                                <button 
+                                 onClick={() => setActiveTab('kyc')}
+                                 className="mt-6 w-full py-4 border-2 border-slate-100 text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-primary hover:text-primary transition-all"
+                                >
+                                   Examiner les documents
+                                </button>
+                             </div>
+                          </div>
                        </div>
 
                        <div className="space-y-8">

@@ -52,16 +52,26 @@ interface UserProfileTabsProps {
   playNotificationSound?: (type: any) => void;
 }
 
-const ProfileTab = ({ active, icon: Icon, label, onClick }: { active: boolean, icon: any, label: string, onClick: () => void }) => (
+const ProfileTab = ({ active, icon: Icon, label, onClick, count }: { active: boolean, icon: any, label: string, onClick: () => void, count?: number }) => (
   <button 
     onClick={onClick}
     className={cn(
-      "w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
+      "w-full flex items-center justify-between px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all group",
       active ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]" : "text-slate-500 hover:bg-slate-50"
     )}
   >
-    <Icon size={18} />
-    {label}
+    <div className="flex items-center gap-3">
+      <Icon size={18} className={cn(active ? "text-white" : "text-slate-400 group-hover:text-primary")} />
+      {label}
+    </div>
+    {count !== undefined && (
+      <span className={cn(
+        "px-2 py-0.5 rounded-full text-[8px]",
+        active ? "bg-white text-primary" : "bg-slate-100 text-slate-500"
+      )}>
+        {count}
+      </span>
+    )}
   </button>
 );
 
@@ -174,26 +184,44 @@ export const UserProfileTabs = ({
 
   const renderPersonal = () => (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-        <div className="relative group mx-auto md:mx-0">
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl bg-slate-100">
-            <img 
-              src={optimizeImage(formData.photourl || `https://ui-avatars.com/api/?name=${user.displayname}`, 400)} 
-              alt={user.displayname} 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
+      <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
+        <div className="relative">
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-2 bg-gradient-to-tr from-emerald-500 to-primary shadow-2xl relative">
+             <div className="w-full h-full rounded-full border-4 border-white overflow-hidden bg-slate-100">
+              <img 
+                src={optimizeImage(formData.photourl || `https://ui-avatars.com/api/?name=${user.displayname}`, 400)} 
+                alt={user.displayname} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+             </div>
+             {user.kyc_status === 'verified' && (
+               <div className="absolute bottom-1 right-1 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                  <CheckCircle size={20} />
+               </div>
+             )}
           </div>
-          <label className="absolute bottom-1 right-1 w-10 h-10 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all cursor-pointer">
+          <label className="absolute -top-1 -right-1 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all cursor-pointer border-4 border-white">
             <Camera size={18} />
             <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'avatar')} />
           </label>
         </div>
-        <div className="flex-1 space-y-4 pt-2 text-center md:text-left">
-            <h3 className="text-2xl font-black italic">Informations Personnelles</h3>
-            <p className="text-slate-400 text-xs font-medium">Gérez votre identité publique et vos informations de base.</p>
+        <div className="flex-1 space-y-4 text-center md:text-left pb-2">
+            <div className="space-y-1">
+               <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter">{user.displayname}</h3>
+               <div className="flex items-center justify-center md:justify-start gap-3">
+                  <span className="text-primary font-black text-xs">@{user.username || 'user'}</span>
+                  <div className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">{user.country || 'Afrique'}</span>
+               </div>
+            </div>
+            <p className="text-slate-500 text-sm font-medium max-w-md leading-relaxed">
+               {user.bio || "Ami de l'Afrique et curieux de sa culture."}
+            </p>
         </div>
       </div>
+
+      <div className="h-px bg-slate-100 my-4" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-2">
@@ -741,55 +769,114 @@ export const UserProfileTabs = ({
   );
 
   const renderActivity = () => (
-    <div className="space-y-10 animate-in slide-in-from-right-4 duration-500">
-       <div className="space-y-4">
-          <h3 className="text-2xl font-black italic">Activité & Statistiques</h3>
-          <p className="text-slate-400 text-xs font-medium">Suivez votre progression et votre engagement sur la plateforme.</p>
+    <div className="space-y-12 animate-in slide-in-from-right-4 duration-500">
+       <div className="space-y-4 text-center md:text-left">
+          <h3 className="text-3xl font-black italic tracking-tighter">Tableau de Bord</h3>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-widest">Suivez votre progression et votre engagement</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* Circle Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
          {[
-           { label: 'Articles lus', val: user.read_count || 142, icon: Eye, color: 'text-primary' },
-           { label: 'Points fidélité', val: user.loyalty_points || 2500, icon: Award, color: 'text-amber-500' },
-           { label: 'Série actuelle', val: `${user.streak_days || 7} j`, icon: TrendingUp, color: 'text-orange-500' },
-           { label: 'Badges reçus', val: user.badges?.length || 5, icon: Shield, color: 'text-secondary' }
+           { label: 'Lectures', val: user.read_count || 142, icon: Eye, color: 'text-primary', bg: 'bg-primary/10', percent: 75 },
+           { label: 'Points', val: user.loyalty_points || 2500, icon: Award, color: 'text-amber-500', bg: 'bg-amber-100', percent: 60 },
+           { label: 'Série', val: user.streak_days || 7, icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-100', percent: 45 },
+           { label: 'Badges', val: user.badges?.length || 5, icon: Shield, color: 'text-secondary', bg: 'bg-secondary/10', percent: 85 }
          ].map((stat, idx) => (
-           <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-2 hover:shadow-xl transition-all hover:-translate-y-1">
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50", stat.color)}>
-                <stat.icon size={20} />
+           <div key={idx} className="flex flex-col items-center gap-4 group">
+              <div className="relative w-28 h-28 md:w-36 md:h-36">
+                 <svg className="w-full h-full -rotate-90">
+                    <circle 
+                      cx="50%" cy="50%" r="45%" 
+                      className="fill-none stroke-slate-100 stroke-[6]"
+                    />
+                    <motion.circle 
+                      cx="50%" cy="50%" r="45%" 
+                      className={cn("fill-none stroke-[6]", stat.color.replace('text', 'stroke'))}
+                      initial={{ strokeDasharray: "0 1000", strokeDashoffset: 0 }}
+                      animate={{ strokeDasharray: `${stat.percent * 2.8} 1000` }}
+                      transition={{ duration: 1.5, delay: 0.2 }}
+                      strokeLinecap="round"
+                    />
+                 </svg>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform", stat.bg, stat.color)}>
+                       <stat.icon size={20} />
+                    </div>
+                    <span className="text-xl md:text-2xl font-black">{stat.val}</span>
+                 </div>
               </div>
-              <p className="text-2xl font-black italic tracking-tighter">{stat.val}</p>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
            </div>
          ))}
       </div>
 
-      <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-             <History size={20} className="text-slate-400" />
-             <h4 className="text-sm font-black uppercase tracking-widest">Historique des 30 derniers jours</h4>
-          </div>
-          <div className="h-64 flex items-end gap-2 px-4">
-             {[30, 45, 20, 60, 40, 55, 70, 40, 30, 50, 65, 40, 30, 60, 80, 50, 40, 30, 20, 45, 60, 70, 50, 40, 30, 40, 55, 65, 70, 85].map((h, idx) => (
-               <div key={idx} className="flex-1 group relative">
-                 <div 
-                  className={cn("w-full bg-slate-100 rounded-t-lg group-hover:bg-primary transition-all", idx === 29 && "bg-primary")} 
-                  style={{ height: `${h}%` }}
-                 />
-                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[8px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                   {h} interactions
-                 </div>
+      {/* Badges and Progress */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8">
+         <div className="bg-slate-50 rounded-[2.5rem] p-8 space-y-8">
+            <div className="flex items-center justify-between">
+               <h4 className="font-black text-sm uppercase tracking-widest">Mes Médailles</h4>
+               <span className="text-[10px] font-black text-primary uppercase">Voir tout</span>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+               {[
+                 { id: 1, label: 'Pionnier', color: 'bg-amber-400', icon: '💎' },
+                 { id: 2, label: 'Lecteur', color: 'bg-emerald-400', icon: '📚' },
+                 { id: 3, label: 'Donateur', color: 'bg-rose-400', icon: '❤️' },
+                 { id: 4, label: 'Expert', color: 'bg-indigo-400', icon: '🎓' }
+               ].map(badge => (
+                 <motion.div 
+                   key={badge.id}
+                   whileHover={{ scale: 1.1, rotate: 5 }}
+                   className="flex-shrink-0 flex flex-col items-center gap-3"
+                 >
+                    <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-xl border-4 border-white", badge.color)}>
+                       {badge.icon}
+                    </div>
+                    <span className="text-[9px] font-black uppercase text-slate-500">{badge.label}</span>
+                 </motion.div>
+               ))}
+            </div>
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+               <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-slate-400">Objectif : Médaille de Diamant</span>
+                  <span className="text-[10px] font-black text-primary">85%</span>
                </div>
-             ))}
-          </div>
-          <div className="flex justify-between px-4 text-[9px] font-black text-slate-400 uppercase">
-             <span>Il y a 30 jours</span>
-             <span>Aujourd'hui</span>
-          </div>
+               <div className="h-4 bg-slate-200 rounded-full overflow-hidden p-1">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '85%' }}
+                    className="h-full bg-primary rounded-full shadow-lg"
+                  />
+               </div>
+               <p className="text-[9px] font-bold text-slate-400 italic">Encore 500 points pour débloquer votre prochain badge !</p>
+            </div>
+         </div>
+
+         <div className="space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+               <History size={20} className="text-slate-400" />
+               <h4 className="text-sm font-black uppercase tracking-widest">Activité Récente</h4>
+            </div>
+            <div className="h-48 flex items-end gap-1 px-2">
+               {[30, 45, 20, 60, 40, 55, 70, 40, 30, 50, 65, 40].map((h, idx) => (
+                 <div key={idx} className="flex-1 group relative">
+                   <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${h}%` }}
+                    className={cn("w-full bg-slate-100 rounded-t-lg group-hover:bg-primary transition-all", idx === 11 && "bg-primary")} 
+                   />
+                 </div>
+               ))}
+            </div>
+            <div className="flex justify-between px-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+               <span>Dernier mois</span>
+               <span>Aujourd'hui</span>
+            </div>
+         </div>
       </div>
     </div>
   );
-
   const renderPreferences = () => (
     <div className="space-y-6 md:space-y-10 animate-in slide-in-from-right-4 duration-500">
        <div className="space-y-4">
@@ -938,11 +1025,11 @@ export const UserProfileTabs = ({
 
   const tabs = [
     { id: 'personal', label: 'Profil', icon: User, render: renderPersonal },
-    { id: 'read-later', label: 'À lire plus tard', icon: FileText, render: renderReadLater },
+    { id: 'read-later', label: 'À lire plus tard', icon: FileText, render: renderReadLater, count: user.bookmarkedarticles?.length },
+    { id: 'activity', label: 'Compteur & Stats', icon: TrendingUp, render: renderActivity },
     { id: 'contact', label: 'Contact', icon: Mail, render: renderContact },
     { id: 'security', label: 'Sécurité', icon: Lock, render: renderSecurity },
     { id: 'kyc', label: 'Vérification', icon: Shield, render: renderKYC },
-    { id: 'activity', label: 'Activité', icon: TrendingUp, render: renderActivity },
     { id: 'preferences', label: 'Réglages', icon: Bell, render: renderPreferences },
     { id: 'billing', label: 'Facturation', icon: CreditCard, render: () => <div className="p-12 text-center text-slate-400 italic font-bold">Section Facturation bientôt disponible.</div> },
     { id: 'data', label: 'Vie Privée', icon: Database, render: () => <div className="p-12 text-center text-slate-400 italic font-bold">Options de gestion des données.</div> }
@@ -963,6 +1050,7 @@ export const UserProfileTabs = ({
                  icon={tab.icon}
                  label={tab.label}
                  onClick={() => setActiveTab(tab.id)}
+                 count={tab.count}
                />
              ))}
            </div>
