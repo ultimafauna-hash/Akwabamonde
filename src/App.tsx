@@ -1893,7 +1893,7 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
                   <div className="flex items-center gap-1.5">
                     <h4 className="font-display font-black leading-tight text-lg">Support Akwaba</h4>
                     <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
-                      <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                      <Check size={10} strokeWidth={4} />
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 opacity-70">
@@ -1955,7 +1955,7 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
                       </span>
                       {msg.isadmin && (
                         <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
-                          <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                          <Check size={8} strokeWidth={4} />
                         </div>
                       )}
                     </div>
@@ -2064,7 +2064,7 @@ const LiveChat = ({ articleId, user, isAdmin }: { articleId: string, user: Fireb
                 <div className="text-[10px] font-black opacity-50">{msg.userName}</div>
                 {msg.isadmin && (
                   <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
-                    <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                    <Check size={8} strokeWidth={4} />
                   </div>
                 )}
               </div>
@@ -3924,6 +3924,7 @@ export default function App() {
       setIsAdminAuthenticated(false);
       localStorage.setItem('akwaba_is_admin', 'false');
       setActiveNotification("Déconnexion réussie");
+      goHome();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -4428,7 +4429,7 @@ export default function App() {
                     />
                     {isAdminAuthenticated && (
                       <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                        <CheckCircle size={10} fill="currentColor" fillOpacity={0} />
+                        <Check size={10} strokeWidth={4} />
                       </div>
                     )}
                   </div>
@@ -4612,7 +4613,7 @@ export default function App() {
                   />
                   {isAdminAuthenticated ? (
                     <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-4 h-4 md:w-5 md:h-5 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                      <CheckCircle size={10} className="md:w-3 md:h-3" fill="currentColor" fillOpacity={0} />
+                      <Check size={10} className="md:w-3 md:h-3" strokeWidth={4} />
                     </div>
                   ) : (
                     <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white" />
@@ -5322,7 +5323,7 @@ export default function App() {
                                         <span className="font-bold text-sm">{comment.username}</span>
                                         {comment.isadmin && (
                                           <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
-                                            <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                                            <Check size={10} strokeWidth={4} />
                                           </div>
                                         )}
                                       </div>

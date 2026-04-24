@@ -788,7 +788,7 @@ export const AdminDashboard = ({
                    <span className="text-slate-950">AKWABA</span> <span className="text-primary">ADMIN</span>
                  </h1>
                  <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-sm">
-                   <CheckCircle size={10} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                   <Check size={10} strokeWidth={4} />
                  </div>
                </div>
                <p className="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em]">Management Suite v2</p>
@@ -914,7 +914,7 @@ export const AdminDashboard = ({
                   />
                 </button>
                 <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white w-4 h-4 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-                   <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                   <Check size={8} strokeWidth={4} />
                 </div>
               </div>
           </div>
@@ -1112,7 +1112,7 @@ export const AdminDashboard = ({
                            <div className="flex items-center gap-3">
                               <h3 className="text-2xl md:text-3xl font-black italic">{currentUser.displayname}</h3>
                               <div className="bg-blue-500 text-white rounded-full p-1 shadow-sm">
-                                 <CheckCircle size={14} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                                 <Check size={14} strokeWidth={4} />
                               </div>
                            </div>
                            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">Super Administrateur • Akwaba Info</p>
@@ -2026,7 +2026,7 @@ export const AdminDashboard = ({
                             </span>
                             {msg.isadmin && (
                               <div className="bg-blue-500 text-white rounded-full p-px shadow-sm">
-                                <CheckCircle size={8} fill="currentColor" fillOpacity={0} strokeWidth={3} />
+                                <Check size={8} strokeWidth={4} />
                               </div>
                             )}
                           </div>
