@@ -159,7 +159,7 @@ const TopNotice = ({ message, onClose }: { message: string, onClose: () => void 
 
 const Breadcrumb = ({ items }: { items: { label: string; onClick?: () => void; active?: boolean }[] }) => (
   <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-8 overflow-x-auto no-scrollbar whitespace-nowrap">
-    <button onClick={items[0].onClick} className="hover:text-primary transition-colors flex items-center gap-1 text-slate-900">
+    <button onClick={() => items && items[0] && items[0].onClick && items[0].onClick()} className="hover:text-primary transition-colors flex items-center gap-1 text-slate-900">
       <Home size={10} /> ACCUEIL
     </button>
     {items.slice(1).map((item, i) => (
@@ -1730,7 +1730,7 @@ const RelatedArticles = ({ currentArticle, articles, onArticleClick, onBookmark,
         let score = 0;
         if (article.category === currentArticle.category) score += 5;
         
-        if (article.tags && currentArticle.tags) {
+        if (article.tags && Array.isArray(article.tags) && currentArticle.tags && Array.isArray(currentArticle.tags)) {
           const commonTags = article.tags.filter(tag => currentArticle.tags?.includes(tag));
           score += commonTags.length * 2;
         }
@@ -5113,7 +5113,7 @@ export default function App() {
                 <div className="space-y-4 text-center">
                   <Breadcrumb items={[
                     { label: "Accueil", onClick: goHome },
-                    { label: selectedArticle.category || 'Actualité', onClick: () => handleCategoryClick(selectedArticle.category) },
+                    { label: selectedArticle?.category || 'Actualité', onClick: () => handleCategoryClick(selectedArticle?.category) },
                     { label: "Lecture", active: true }
                   ]} />
                   
@@ -5123,21 +5123,21 @@ export default function App() {
                     transition={{ delay: 0.1 }}
                     className="text-3xl md:text-6xl font-display font-black leading-[1.1] tracking-tight text-slate-900 drop-shadow-sm"
                   >
-                    {selectedArticle.title || 'Sans titre'}
+                    {selectedArticle?.title || 'Sans titre'}
                   </motion.h1>
                   <div className="w-24 h-2 bg-primary mx-auto rounded-full mt-6 mb-8" />
-                {selectedArticle.tags && Array.isArray(selectedArticle.tags) && selectedArticle.tags.length > 0 && (
+                {selectedArticle?.tags && Array.isArray(selectedArticle.tags) && selectedArticle.tags.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2">
-                    {selectedArticle.tags.map(tag => (
+                    {selectedArticle.tags.map((tag: any) => (
                       <button 
-                        key={tag}
+                        key={String(tag)}
                         onClick={() => {
-                          setSearchQuery(tag);
+                          setSearchQuery(String(tag));
                           navigateTo('search');
                         }}
                         className="text-[10px] font-black bg-slate-100 text-slate-700 hover:bg-primary/10 hover:text-primary px-3 py-1 rounded-full uppercase tracking-widest transition-colors border border-slate-200"
                       >
-                        #{tag}
+                        #{String(tag)}
                       </button>
                     ))}
                   </div>
@@ -5145,22 +5145,22 @@ export default function App() {
                   <div className="flex items-center justify-center gap-4 text-sm text-slate-700 font-sans">
                     <div 
                       className="flex items-center gap-2 cursor-pointer group"
-                      onClick={() => handleAuthorClick(selectedArticle.author || 'Rédaction')}
+                      onClick={() => handleAuthorClick(selectedArticle?.author || 'Rédaction')}
                     >
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary text-xs group-hover:bg-primary group-hover:text-white transition-colors">
-                        {(selectedArticle.author || 'R')[0]}
+                        {(selectedArticle?.author || 'R')[0]}
                       </div>
-                      <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">{selectedArticle.author || 'Rédaction'}</span>
-                      {selectedArticle.authorrole && (
+                      <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">{selectedArticle?.author || 'Rédaction'}</span>
+                      {selectedArticle?.authorrole && (
                         <span className="text-[10px] bg-primary/5 text-primary px-2 py-0.5 rounded font-bold uppercase ml-1">
                           {selectedArticle.authorrole}
                         </span>
                       )}
                     </div>
                     <span>•</span>
-                  <span>{safeFormatDate(selectedArticle.date, 'dd MMMM yyyy')}</span>
+                  <span>{safeFormatDate(selectedArticle?.date, 'dd MMMM yyyy')}</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1"><Clock size={14} /> {selectedArticle.readingtime}</span>
+                  <span className="flex items-center gap-1"><Clock size={14} /> {selectedArticle?.readingtime || '5 min'}</span>
                 </div>
               </div>
 
@@ -5182,36 +5182,33 @@ export default function App() {
                 </div>
               )}
 
-              {(selectedArticle.image || selectedArticle.video) && (
+              {(selectedArticle?.image || selectedArticle?.video) && (
                 <div className="space-y-6">
-                  {selectedArticle.video && getYoutubeId(selectedArticle.video) && (
+                  {selectedArticle?.video && getYoutubeId(selectedArticle.video) && (
                     <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-slate-900/5 aspect-video">
                       <iframe 
-                        src={`https://www.youtube.com/embed/${getYoutubeId(selectedArticle.video)}`}
-                        title={selectedArticle.title}
+                        src={`https://www.youtube.com/embed/${getYoutubeId(selectedArticle?.video)}`}
+                        title={selectedArticle?.title || 'Video'}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowFullScreen
                       />
                     </div>
                   )}
-                  {selectedArticle.image && (
+                  {selectedArticle?.image && (
                     <div className="w-full rounded-[40px] overflow-hidden shadow-2xl bg-white border-8 border-white">
-                      <motion.div
-                        style={{ y: useTransform(scrollYProgress, [0, 1], [0, -100]) }}
-                        className="relative"
-                      >
+                      <div className="relative">
                         <img 
-                          id={`article-detail-img-${selectedArticle.id}`}
+                          id={`article-detail-img-${selectedArticle?.id}`}
                           src={optimizeImage(selectedArticle.image, 1200)} 
-                          alt={selectedArticle.title}
+                          alt={selectedArticle?.title || ''}
                           className="w-full h-auto max-h-[85vh] object-cover"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                           decoding="async"
                         />
-                      </motion.div>
-                      {selectedArticle.imagecredit && (
+                      </div>
+                      {selectedArticle?.imagecredit && (
                         <div className="px-8 py-4 bg-slate-900 text-[10px] font-black text-white/60 uppercase tracking-[0.2em] flex items-center gap-3 relative z-10">
                           <div className="p-1.5 bg-white/10 rounded-lg">
                             <Camera size={14} />
@@ -5252,7 +5249,7 @@ export default function App() {
                       if (!selectedArticle) return null;
                       
                       const isPremiumArticle = selectedArticle.ispremium;
-                      const hasAccess = !isPremiumArticle || (currentUser && (currentUser.isPremium || currentUser.role === 'admin' || currentUser.role === 'editor'));
+                      const hasAccess = !isPremiumArticle || (currentUser && (currentUser.ispremium || currentUser.role === 'admin' || currentUser.role === 'editor'));
                       
                       const currentContent = typeof selectedArticle.content === 'string' ? selectedArticle.content : '';
                       if (!currentContent) return <p className="text-slate-400 italic">Cet article n'a pas de contenu.</p>;
@@ -5456,7 +5453,7 @@ export default function App() {
                                     "w-12 h-12 md:w-16 md:h-16 rounded-3xl flex items-center justify-center font-black shrink-0 shadow-inner",
                                     depth > 0 ? "bg-slate-100 text-slate-400 text-sm" : "bg-primary/10 text-primary text-xl"
                                   )}>
-                                    {comment.username[0].toUpperCase()}
+                                    {(comment.username || 'U')[0].toUpperCase()}
                                   </div>
                                   <div className="flex-1 space-y-2">
                                     <div className="flex justify-between items-center">
@@ -5590,7 +5587,7 @@ export default function App() {
                         onClick={() => handleAuthorClick(selectedArticle.author)}
                       >
                          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center font-black text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                           {selectedArticle.author[0]}
+                           {(selectedArticle.author || 'R')[0]}
                          </div>
                          <div className="flex-1">
                             <div className="font-bold text-sm group-hover:text-primary transition-colors">{selectedArticle.author}</div>
