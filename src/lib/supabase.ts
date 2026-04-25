@@ -1185,7 +1185,7 @@ export const SupabaseService = {
       // Send email notification via Edge Function
       await supabase.functions.invoke('notify-kyc-submission', {
         body: {
-          adminEmail: 'akwabanewsinfo@gmail.com',
+          adminEmail: 'akwabanewinfo@gmail.com',
           userId,
           username,
           date: new Date().toISOString()

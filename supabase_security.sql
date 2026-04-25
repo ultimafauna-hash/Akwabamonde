@@ -2,7 +2,6 @@
 -- Tous les accès sont basés sur le schéma lowercase.
 
 -- 1. CONFIGURATION GLOBALE
--- (Les tables ont déjà RLS activé dans init si possible, mais on le force ici pour être sûr)
 DO $$ 
 DECLARE
     r RECORD;
@@ -12,87 +11,100 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2. POLITIQUES : ARTICLES (Public: Lecture seule, Admin: Tout)
+-- Helper pour vérifier si l'utilisateur est admin
+-- On utilise soit l'email (plus sûr au début) soit le rôle dans le profil
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (
+    auth.jwt() ->> 'email' = 'akwabanewinfo@gmail.com'
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE uid = auth.uid() AND role = 'admin')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. POLITIQUES : ARTICLES
 DROP POLICY IF EXISTS "Articles: lecture publique" ON public.articles;
-CREATE POLICY "Articles: lecture publique" ON public.articles FOR SELECT USING (status = 'published');
+CREATE POLICY "Articles: lecture publique" ON public.articles FOR SELECT USING (status = 'published' OR public.is_admin());
 
 DROP POLICY IF EXISTS "Articles: admin full access" ON public.articles;
-CREATE POLICY "Articles: admin full access" ON public.articles FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
+CREATE POLICY "Articles: admin full access" ON public.articles FOR ALL USING (public.is_admin());
 
--- 3. POLITIQUES : PROFILS (Utilisateur: Soi-même, Admin: Tout)
+-- 3. POLITIQUES : PROFILS
 DROP POLICY IF EXISTS "Profiles: lecture/modif par soi" ON public.profiles;
 CREATE POLICY "Profiles: lecture/modif par soi" ON public.profiles FOR ALL USING (auth.uid() = uid);
 
+DROP POLICY IF EXISTS "Profiles: visibilité publique" ON public.profiles;
+CREATE POLICY "Profiles: visibilité publique" ON public.profiles FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Profiles: admin full access" ON public.profiles;
-CREATE POLICY "Profiles: admin full access" ON public.profiles FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
+CREATE POLICY "Profiles: admin full access" ON public.profiles FOR ALL USING (public.is_admin());
 
--- 4. POLITIQUES : HISTOIRE & CULTURE (Public: Lecture seule, Admin: Tout)
-DROP POLICY IF EXISTS "Culture: lecture publique" ON public.culture_posts;
-CREATE POLICY "Culture: lecture publique" ON public.culture_posts FOR SELECT USING (status = 'published');
+-- 4. POLITIQUES : HISTOIRE & CULTURE (Culture, Histoire, Stories, Quizzes, Map)
+-- Lecture publique pour tout le monde
+CREATE POLICY "Public: lecture seule" ON public.culture_posts FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.history FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.stories FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.quizzes FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.map_points FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.events FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.authors FOR SELECT USING (true);
+CREATE POLICY "Public: lecture seule" ON public.polls FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Culture: admin full access" ON public.culture_posts;
-CREATE POLICY "Culture: admin full access" ON public.culture_posts FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
+-- Admin full access pour tout le contenu
+CREATE POLICY "Admin: full access" ON public.culture_posts FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.history FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.stories FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.quizzes FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.map_points FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.events FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.authors FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access" ON public.polls FOR ALL USING (public.is_admin());
 
--- 5. POLITIQUES : COMMENTAIRES (Public: Lecture, Connectés: Insertion)
+-- 5. POLITIQUES : COMMENTAIRES & CHATS
 DROP POLICY IF EXISTS "Comments: lecture publique" ON public.comments;
 CREATE POLICY "Comments: lecture publique" ON public.comments FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Comments: insertion connectés" ON public.comments;
 CREATE POLICY "Comments: insertion connectés" ON public.comments FOR INSERT TO authenticated WITH CHECK (auth.uid() = userid);
 
+CREATE POLICY "Chats: lecture publique" ON public.chats FOR SELECT USING (true);
+CREATE POLICY "Chats: insertion connectés" ON public.chats FOR INSERT TO authenticated WITH CHECK (auth.uid() = userid);
+
 DROP POLICY IF EXISTS "Comments: admin full access" ON public.comments;
-CREATE POLICY "Comments: admin full access" ON public.comments FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
+CREATE POLICY "Comments: admin full access" ON public.comments FOR ALL USING (public.is_admin());
+CREATE POLICY "Admin: full access chats" ON public.chats FOR ALL USING (public.is_admin());
 
--- 6. POLITIQUES : PARAMÈTRES (Public: Lecture, Admin: Tout)
-DROP POLICY IF EXISTS "Settings: lecture publique" ON public.settings;
+-- 6. POLITIQUES : SUPPORT & MESSAGES
+-- L'utilisateur ne voit que ses propres messages de support
+CREATE POLICY "Support: voir ses messages" ON public.support_messages FOR SELECT USING (auth.uid() = userid OR public.is_admin());
+CREATE POLICY "Support: envoyer message" ON public.support_messages FOR INSERT WITH CHECK (auth.uid() = userid);
+CREATE POLICY "Admin: full access support" ON public.support_messages FOR ALL USING (public.is_admin());
+
+-- 7. POLITIQUES : PETITES ANNONCES (Classifieds)
+CREATE POLICY "Classifieds: lecture publique" ON public.classifieds FOR SELECT USING (status = 'active' OR public.is_admin() OR auth.uid() = userid);
+CREATE POLICY "Classifieds: insertion connectés" ON public.classifieds FOR INSERT TO authenticated WITH CHECK (auth.uid() = userid);
+CREATE POLICY "Classifieds: modif propre annonce" ON public.classifieds FOR UPDATE USING (auth.uid() = userid);
+CREATE POLICY "Admin: full access classifieds" ON public.classifieds FOR ALL USING (public.is_admin());
+
+-- 8. POLITIQUES : RESTE (Settings, Media, Subscribers, etc.)
 CREATE POLICY "Settings: lecture publique" ON public.settings FOR SELECT USING (true);
+CREATE POLICY "Settings: admin only" ON public.settings FOR ALL USING (public.is_admin());
 
-DROP POLICY IF EXISTS "Settings: admin full access" ON public.settings;
-CREATE POLICY "Settings: admin full access" ON public.settings FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
--- 7. POLITIQUES : TRANSACTIONS (Utilisateur: Soi, Admin: Tout)
-DROP POLICY IF EXISTS "Transactions: lecture propre" ON public.transactions;
-CREATE POLICY "Transactions: lecture propre" ON public.transactions FOR SELECT USING (auth.uid() = userid);
-
-DROP POLICY IF EXISTS "Transactions: insertion publique" ON public.transactions;
-CREATE POLICY "Transactions: insertion publique" ON public.transactions FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Transactions: admin full access" ON public.transactions;
-CREATE POLICY "Transactions: admin full access" ON public.transactions FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
--- 8. POLITIQUES : LIVE BLOGS & WEB TV (Public: Lecture, Admin: Tout)
-DROP POLICY IF EXISTS "LiveBlogs: lecture publique" ON public.live_blogs;
-CREATE POLICY "LiveBlogs: lecture publique" ON public.live_blogs FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "WebTV: lecture publique" ON public.web_tv;
-CREATE POLICY "WebTV: lecture publique" ON public.web_tv FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "LiveBlogs: admin full access" ON public.live_blogs;
-CREATE POLICY "LiveBlogs: admin full access" ON public.live_blogs FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
-DROP POLICY IF EXISTS "WebTV: admin full access" ON public.web_tv;
-CREATE POLICY "WebTV: admin full access" ON public.web_tv FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
--- 9. POLITIQUES : ADMIN LOGS (Admin uniquement)
-DROP POLICY IF EXISTS "AdminLogs: admin only" ON public.admin_activity_log;
-CREATE POLICY "AdminLogs: admin only" ON public.admin_activity_log FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
--- 10. POLITIQUES : ABONNÉS NEWSLETTER (Public: Insertion, Admin: Tout)
-DROP POLICY IF EXISTS "Subscribers: insertion publique" ON public.subscribers;
-CREATE POLICY "Subscribers: insertion publique" ON public.subscribers FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Subscribers: admin full access" ON public.subscribers;
-CREATE POLICY "Subscribers: admin full access" ON public.subscribers FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
-
--- 11. POLITIQUES : NOTIFICATIONS (Utilisateur/Global: Lecture)
-DROP POLICY IF EXISTS "Notifications: lecture propre ou globale" ON public.notifications;
-CREATE POLICY "Notifications: lecture propre ou globale" ON public.notifications FOR SELECT USING (userid = 'global' OR userid = auth.uid()::text);
-
--- 12. POLITIQUES : MÉDIAS (Public: Lecture, Admin: Tout)
-DROP POLICY IF EXISTS "Media: lecture publique" ON public.media;
 CREATE POLICY "Media: lecture publique" ON public.media FOR SELECT USING (true);
+CREATE POLICY "Media: admin only" ON public.media FOR ALL USING (public.is_admin());
 
-DROP POLICY IF EXISTS "Media: admin full access" ON public.media;
-CREATE POLICY "Media: admin full access" ON public.media FOR ALL TO authenticated USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com' OR auth.jwt() ->> 'email' = 'kassiri.traore@gmail.com');
+CREATE POLICY "Subscribers: insertion" ON public.subscribers FOR INSERT WITH CHECK (true);
+CREATE POLICY "Subscribers: admin only" ON public.subscribers FOR ALL USING (public.is_admin());
 
--- NOTE : 'akwabanewsinfo@gmail.com' est l'email administrateur de référence.
+CREATE POLICY "Notifications: voir les siennes ou globales" ON public.notifications FOR SELECT USING (userid = 'global' OR userid = auth.uid()::text);
+CREATE POLICY "Admin: full access notifs" ON public.notifications FOR ALL USING (public.is_admin());
+
+-- 9. POLITIQUES : LOGS & CONTACTS
+CREATE POLICY "AdminLogs: admin only" ON public.admin_activity_log FOR ALL USING (public.is_admin());
+CREATE POLICY "UserLogs: insertion propre" ON public.user_logs FOR INSERT WITH CHECK (auth.uid() = userid);
+CREATE POLICY "UserLogs: admin only view" ON public.user_logs FOR SELECT USING (public.is_admin());
+CREATE POLICY "ContactMessages: insertion publique" ON public.contact_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "ContactMessages: admin only" ON public.contact_messages FOR ALL USING (public.is_admin());
+
+-- NOTE : 'akwabanewinfo@gmail.com' est l'email administrateur unique.

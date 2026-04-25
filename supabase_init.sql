@@ -332,6 +332,27 @@ CREATE TABLE IF NOT EXISTS public.classifieds (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold', 'expired'))
 );
 
+-- Messages de Contact (Séparés du support pour une meilleure gestion)
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT,
+    content TEXT NOT NULL,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Logs d'activité Utilisateurs (Analytics internes)
+CREATE TABLE IF NOT EXISTS public.user_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    userid UUID REFERENCES auth.users(id),
+    action TEXT NOT NULL, -- 'read_article', 'search', 'login'
+    target_id TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userid TEXT, -- Can be 'global' or UUID
