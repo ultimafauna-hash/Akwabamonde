@@ -15,7 +15,7 @@ import {
   MapPin,
   CheckCircle,
   AlertTriangle,
-  History,
+  History as HistoryIcon,
   Clock,
   TrendingUp,
   Award,
@@ -608,7 +608,7 @@ export const UserProfileTabs = ({
         <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-50 pb-4">
               <div className="flex items-center gap-3">
-                 <History size={20} className="text-slate-400" />
+                 <HistoryIcon size={20} className="text-slate-400" />
                  <h4 className="text-sm font-black uppercase tracking-widest">Sessions Actives</h4>
               </div>
               <button className="text-[9px] font-black text-red-500 hover:underline uppercase tracking-widest">Déconnecter tous les autres appareils</button>
@@ -855,7 +855,7 @@ export const UserProfileTabs = ({
 
          <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-               <History size={20} className="text-slate-400" />
+               <HistoryIcon size={20} className="text-slate-400" />
                <h4 className="text-sm font-black uppercase tracking-widest">Activité Récente</h4>
             </div>
             <div className="h-48 flex items-end gap-1 px-2">

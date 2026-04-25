@@ -57,6 +57,7 @@ import {
   Sun,
   Moon,
   Headset,
+  History as HistoryIcon,
   ChevronDown,
   Map as MapIcon,
   Monitor,
@@ -5868,7 +5869,7 @@ export default function App() {
                         article={article} 
                         variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} 
                         onClick={() => handleArticleClick(article)}
-                        onBookmark={(id, e) => handleBookmarkArticle(id, e)}
+                        onBookmark={(id) => handleBookmarkArticle(id)}
                         isBookmarked={userBookmarkedArticles.has(article.id)}
                         onAuthorClick={handleAuthorClick}
                       />
@@ -5880,8 +5881,8 @@ export default function App() {
                         "grid gap-8 py-10",
                         searchViewMode === 'grid' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
                     )}>
-                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} />
-                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'vertical' : 'horizontal'} />
+                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'grid' : 'list'} />
+                      <ArticleSkeleton variant={searchViewMode === 'grid' ? 'grid' : 'list'} />
                     </div>
                   )}
                 </div>
@@ -5890,7 +5891,7 @@ export default function App() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                      <div className="space-y-6">
                         <div className="flex items-center gap-3">
-                           <History size={20} className="text-slate-300" />
+                           <HistoryIcon size={20} className="text-slate-300" />
                            <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-400">Recherches Récentes</h3>
                         </div>
                         <div className="flex flex-wrap gap-2">

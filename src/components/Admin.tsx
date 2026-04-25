@@ -1026,13 +1026,13 @@ export const AdminDashboard = ({
                                     className="flex items-center gap-6 p-4 rounded-3xl hover:bg-slate-50 transition-all group"
                                   >
                                      <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-md">
-                                        <img src={optimizeImage(article.imageurl, 100)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                                        <img src={optimizeImage(article.image, 100)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
                                      </div>
                                      <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase rounded-md tracking-wider">{article.category}</span>
                                            <span className="text-[10px] text-slate-300">•</span>
-                                           <span className="text-[9px] font-bold text-slate-400 uppercase">{safeFormatDate(article.date)}</span>
+                                           <span className="text-[9px] font-bold text-slate-400 uppercase">{safeFormatDateAdmin(article.date)}</span>
                                         </div>
                                         <h4 className="font-bold text-slate-800 truncate group-hover:text-primary transition-colors">{article.title}</h4>
                                      </div>
