@@ -66,9 +66,15 @@ export const SupabaseService = {
       return;
     }
 
+    // Sanitize keys to lowercase to match database schema
+    const sanitizedArticle: any = {};
+    Object.keys(article).forEach(key => {
+      sanitizedArticle[key.toLowerCase()] = (article as any)[key];
+    });
+
     const { error } = await supabase
       .from('articles')
-      .upsert(article);
+      .upsert(sanitizedArticle);
     
     if (error) throw error;
   },

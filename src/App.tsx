@@ -6655,7 +6655,7 @@ Dernière mise à jour : Avril 2026
                   onCreateArticle={() => setEditingArticle({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
                   onCreateEvent={() => setEditingEvent({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
                   onCreatePoll={() => setEditingPoll({ id: crypto.randomUUID(), startDate: new Date().toISOString().split('T')[0], options: [{id: '1', text: '', votes: 0}, {id: '2', text: '', votes: 0}], active: true } as any)}
-                  onCreateLiveBlog={() => setEditingLiveBlog({ id: crypto.randomUUID(), title: '', updates: [], status: 'live', createdAt: new Date().toISOString() } as any)}
+                  onCreateLiveBlog={() => setEditingLiveBlog({ id: crypto.randomUUID(), title: '', updates: [], status: 'live', createdat: new Date().toISOString() } as any)}
                   onCreateWebTV={() => setEditingWebTV({ id: crypto.randomUUID(), title: '', description: '', videourl: '', thumbnail: '', category: 'Web TV', date: new Date().toISOString(), views: 0 } as any)}
                   onCreateClassified={() => setEditingClassified({ id: crypto.randomUUID(), title: '', description: '', category: 'divers', location: '', contact: '', date: new Date().toISOString(), status: 'active', userid: currentUser?.uid || 'admin', username: currentUser?.displayname || 'Admin' } as any)}
                   onDeleteArticle={handleDeleteArticle}

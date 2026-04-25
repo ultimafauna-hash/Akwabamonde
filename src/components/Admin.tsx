@@ -3193,22 +3193,22 @@ export const AdminEditor = ({
     video: data.video || '',
     excerpt: data.excerpt || '',
     content: data.content || '',
-    imagecredit: data.imagecredit || data.imageCredit || '',
-    seotitle: data.seotitle || data.seoTitle || '',
-    seodescription: data.seodescription || data.seoDescription || '',
-    socialimage: data.socialimage || data.socialImage || '',
+    imagecredit: data.imagecredit || '',
+    seotitle: data.seotitle || '',
+    seodescription: data.seodescription || '',
+    socialimage: data.socialimage || '',
     status: data.status || 'published',
-    scheduledat: data.scheduledat || data.scheduledAt || null,
-    audiourl: data.audiourl || data.audioUrl || '',
+    scheduledat: data.scheduledat || null,
+    audiourl: data.audiourl || '',
     gallery: data.gallery || [],
-    ispremium: data.ispremium || data.isPremium || false,
+    ispremium: data.ispremium || false,
     // Article specific
     ...(type === 'article' ? {
       category: data.category || 'Afrique',
       author: data.author || 'Équipe Akwaba Info',
-      authorrole: data.authorrole || data.authorRole || 'Journaliste',
+      authorrole: data.authorrole || 'Journaliste',
       source: data.source || '',
-      readingtime: data.readingtime || data.readingTime || '4 min',
+      readingtime: data.readingtime || '4 min',
       views: data.views || 0,
       likes: data.likes || 0,
       tags: data.tags || [],
@@ -3285,8 +3285,8 @@ export const AdminEditor = ({
           .replace(/\s+/g, '-');
       }
 
-      if (!touchedFields.seoTitle) {
-        updates.seoTitle = debouncedTitle;
+      if (!touchedFields.seotitle) {
+        updates.seotitle = debouncedTitle;
       }
 
       if (Object.keys(updates).length > 0) {
@@ -3796,10 +3796,10 @@ export const AdminEditor = ({
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Titre Google</label>
                   <input 
                     type="text" 
-                    value={formData.seoTitle || ''}
+                    value={formData.seotitle || ''}
                     onChange={(e) => {
-                      setFormData({...formData, seoTitle: e.target.value});
-                      setTouchedFields(prev => ({...prev, seoTitle: true}));
+                      setFormData({...formData, seotitle: e.target.value});
+                      setTouchedFields(prev => ({...prev, seotitle: true}));
                     }}
                     className="w-full bg-slate-50 rounded-xl px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-primary/10"
                     placeholder="Titre pour les moteurs de recherche"
@@ -3808,10 +3808,10 @@ export const AdminEditor = ({
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Méta Description</label>
                   <textarea 
-                    value={formData.seoDescription || ''}
+                    value={formData.seodescription || ''}
                     onChange={(e) => {
-                      setFormData({...formData, seoDescription: e.target.value});
-                      setTouchedFields(prev => ({...prev, seoDescription: true}));
+                      setFormData({...formData, seodescription: e.target.value});
+                      setTouchedFields(prev => ({...prev, seodescription: true}));
                     }}
                     className="w-full bg-slate-50 rounded-xl px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-primary/10 h-20"
                     placeholder="Méta description pour Google..."
@@ -3820,8 +3820,8 @@ export const AdminEditor = ({
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Image Partage Social</label>
                   <GitHubImageUpload 
-                    value={formData.socialImage || ''}
-                    onChange={(val) => setFormData({...formData, socialImage: val})}
+                    value={formData.socialimage || ''}
+                    onChange={(val) => setFormData({...formData, socialimage: val})}
                     placeholder="URL image Facebook/Twitter"
                   />
                 </div>
