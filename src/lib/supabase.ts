@@ -321,24 +321,15 @@ export const SupabaseService = {
   async updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<void> {
     if (isPlaceholder) return;
     
-    // Check username uniqueness if it's being updated
-    if (data.username) {
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('uid')
-        .eq('username', data.username.toLowerCase())
-        .maybeSingle();
-      
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-      if (existingUser && existingUser.uid !== userId) {
-        throw new Error("Ce nom d'utilisateur est déjà utilisé.");
-      }
-    }
+    // Filtrer les données pour ne modifier que les colonnes autorisées (photourl, username, displayname, bio)
+    // Cela évite l'erreur "Could not find the 'app_metadata' column of 'profiles'"
+    const profileData: any = {};
+    if (data.photourl !== undefined) profileData.photourl = data.photourl;
+    if (data.username !== undefined) profileData.username = data.username;
+    if (data.displayname !== undefined) profileData.displayname = data.displayname;
+    if (data.bio !== undefined) profileData.bio = data.bio;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(data)
-      .eq('uid', userId);
+    const { error } = await supabase.from('profiles').update(profileData).eq('uid', userId);
     if (error) throw error;
   },
 
