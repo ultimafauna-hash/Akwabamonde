@@ -3085,7 +3085,7 @@ export default function App() {
         }
         
         // Admin Detection (Allowing both variants to prevent lockout)
-        const isAdminEmail = user.email === 'akwabanewinfo@gmail.com';
+        const isAdminEmail = user.email === 'akwabanewsinfo@gmail.com';
         
         if (isAdminEmail) {
           setIsAdminAuthenticated(true);
@@ -3099,8 +3099,15 @@ export default function App() {
             if (window.location.hash) window.history.replaceState({}, '', window.location.pathname);
           }
         } else {
-          setIsAdminAuthenticated(false);
-          safeStorage.set('akwaba_is_admin', 'false');
+          // Check profile role to allow other designated admins
+          const { data: profile } = await supabase.from('profiles').select('role').eq('uid', user.id).maybeSingle();
+          if (profile?.role === 'admin') {
+            setIsAdminAuthenticated(true);
+            safeStorage.set('akwaba_is_admin', 'true');
+          } else {
+            setIsAdminAuthenticated(false);
+            safeStorage.set('akwaba_is_admin', 'false');
+          }
         }
       } else {
         setCurrentUser(null);
@@ -3199,7 +3206,7 @@ export default function App() {
   const handleAdminLogin = async () => {
     try {
       // Prioritize current user if already logged in, otherwise use fallback admin
-      const adminEmail = currentUser?.email || 'akwabanewinfo@gmail.com';
+      const adminEmail = currentUser?.email || 'akwabanewsinfo@gmail.com';
       setActiveNotification({ 
         message: `Envoi du lien d'accès sécurisé à ${adminEmail}...`, 
         type: 'info' 
@@ -3349,7 +3356,7 @@ export default function App() {
       if (details.includes('settings')) {
         details = "La table 'settings' est manquante ou inaccessible dans votre base de données Supabase.";
       }
-      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec akwabanewinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
+      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec akwabanewsinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
     }
   };
 

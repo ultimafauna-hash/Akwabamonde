@@ -17,7 +17,7 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN (
-    auth.jwt() ->> 'email' = 'akwabanewinfo@gmail.com'
+    auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com'
     OR EXISTS (SELECT 1 FROM public.profiles WHERE uid = auth.uid() AND role = 'admin')
   );
 END;
@@ -107,4 +107,4 @@ CREATE POLICY "UserLogs: admin only view" ON public.user_logs FOR SELECT USING (
 CREATE POLICY "ContactMessages: insertion publique" ON public.contact_messages FOR INSERT WITH CHECK (true);
 CREATE POLICY "ContactMessages: admin only" ON public.contact_messages FOR ALL USING (public.is_admin());
 
--- NOTE : 'akwabanewinfo@gmail.com' est l'email administrateur unique.
+-- NOTE : 'akwabanewsinfo@gmail.com' est l'email administrateur unique.
